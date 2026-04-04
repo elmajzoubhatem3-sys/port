@@ -27,7 +27,26 @@ type ProjectItem = {
   sections: ProjectSection[];
 };
 
+type DbProject = {
+  id: number;
+  name: string;
+  image_url: string;
+  old_price: string;
+  new_price: string | null;
+  badge: string | null;
+  description: string | null;
+};
+
+type DbSection = {
+  id: number;
+  project_id: number;
+  title: string;
+  text: string | null;
+  image_url: string;
+};
+
 const ADMIN_PASSWORD = "vertex123";
+const STORAGE_BUCKET = "portfolio";
 
 type ViewMode = "home" | "all-projects" | "project-details";
 
@@ -50,12 +69,49 @@ function HeroScene() {
   );
 }
 
+function mapProjects(projects: DbProject[], sections: DbSection[]): ProjectItem[] {
+  return projects.map((project) => ({
+    id: project.id,
+    image: project.image_url,
+    name: project.name,
+    oldPrice: project.old_price,
+    newPrice: project.new_price ?? "",
+    badge: project.badge === "NEW" || project.badge === "SALE" ? project.badge : "",
+    description: project.description ?? "",
+    sections: sections
+      .filter((section) => section.project_id === project.id)
+      .map((section) => ({
+        id: section.id,
+        title: section.title,
+        text: section.text ?? "",
+        image: section.image_url,
+      })),
+  }));
+}
+
+async function uploadImage(file: File, folder: string) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(fileName, file, {
+    upsert: false,
+  });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
 type ProjectsManagerProps = {
   isAdmin: boolean;
 };
 
 function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
   const [name, setName] = useState("");
   const [oldPrice, setOldPrice] = useState("");
   const [newPrice, setNewPrice] = useState("");
@@ -70,28 +126,34 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const [sectionText, setSectionText] = useState("");
   const [sectionImageFile, setSectionImageFile] = useState<File | null>(null);
 
-  useEffect(() => {
   const fetchProjects = async () => {
-    const { data } = await supabase.from("projects").select("*");
+    setLoading(true);
 
-    if (data) {
-      setProjects(
-        data.map((p: any) => ({
-          id: p.id,
-          image: p.image_url,
-          name: p.name,
-          oldPrice: p.old_price,
-          newPrice: p.new_price || "",
-          badge: p.badge || "",
-          description: p.description || "",
-          sections: [],
-        }))
-      );
+    const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
+      await Promise.all([
+        supabase
+          .from("projects")
+          .select("id,name,image_url,old_price,new_price,badge,description")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("project_sections")
+          .select("id,project_id,title,text,image_url")
+          .order("created_at", { ascending: true }),
+      ]);
+
+    if (projectsError || sectionsError) {
+      console.error(projectsError || sectionsError);
+      setLoading(false);
+      return;
     }
+
+    setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
+    setLoading(false);
   };
 
-  fetchProjects();
-}, []);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const resetForm = () => {
     setName("");
@@ -108,84 +170,81 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
     setImageFile(file);
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim() || !oldPrice.trim()) return;
 
-    if (editingId !== null) {
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const imageUrl = reader.result as string;
-          setProjects((prev) =>
-            prev.map((project) =>
-              project.id === editingId
-                ? {
-                    ...project,
-                    image: imageUrl,
-                    name: name.trim(),
-                    oldPrice: oldPrice.trim(),
-                    newPrice: newPrice.trim(),
-                    description: description.trim(),
-                    badge,
-                  }
-                : project
-            )
-          );
-        };
-        reader.readAsDataURL(imageFile);
-      } else {
-        setProjects((prev) =>
-          prev.map((project) =>
-            project.id === editingId
-              ? {
-                  ...project,
-                  name: name.trim(),
-                  oldPrice: oldPrice.trim(),
-                  newPrice: newPrice.trim(),
-                  description: description.trim(),
-                  badge,
-                }
-              : project
-          )
-        );
+    try {
+      setSaving(true);
+
+      if (editingId !== null) {
+        const currentProject = projects.find((project) => project.id === editingId);
+        let imageUrl = currentProject?.image || "";
+
+        if (imageFile) {
+          imageUrl = await uploadImage(imageFile, "projects");
+        }
+
+        const { error } = await supabase
+          .from("projects")
+          .update({
+            name: name.trim(),
+            old_price: oldPrice.trim(),
+            new_price: newPrice.trim() || null,
+            description: description.trim() || null,
+            badge: badge || null,
+            image_url: imageUrl,
+          })
+          .eq("id", editingId);
+
+        if (error) throw error;
+
+        resetForm();
+        e.currentTarget.reset();
+        await fetchProjects();
+        return;
       }
+
+      if (!imageFile) return;
+
+      const imageUrl = await uploadImage(imageFile, "projects");
+
+      const { error } = await supabase.from("projects").insert({
+        name: name.trim(),
+        old_price: oldPrice.trim(),
+        new_price: newPrice.trim() || null,
+        description: description.trim() || null,
+        badge: badge || null,
+        image_url: imageUrl,
+      });
+
+      if (error) throw error;
 
       resetForm();
       e.currentTarget.reset();
-      return;
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong while saving the project.");
+    } finally {
+      setSaving(false);
     }
-
-    if (!imageFile) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string;
-      setProjects((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          image: imageUrl,
-          name: name.trim(),
-          oldPrice: oldPrice.trim(),
-          newPrice: newPrice.trim(),
-          badge,
-          description: description.trim(),
-          sections: [],
-        },
-      ]);
-    };
-    reader.readAsDataURL(imageFile);
-
-    resetForm();
-    e.currentTarget.reset();
   };
 
-  const handleDelete = (id: number) => {
-    setProjects((prev) => prev.filter((project) => project.id !== id));
-    if (selectedProjectId === id) {
-      setSelectedProjectId(null);
-      setViewMode("home");
+  const handleDelete = async (id: number) => {
+    try {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+
+      if (selectedProjectId === id) {
+        setSelectedProjectId(null);
+        setViewMode("home");
+      }
+
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Could not delete this project.");
     }
   };
 
@@ -197,6 +256,7 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
     setDescription(project.description || "");
     setBadge(project.badge || "");
     setImageFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSectionImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -204,38 +264,34 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
     setSectionImageFile(file);
   };
 
-  const handleAddSection = (e: FormEvent<HTMLFormElement>) => {
+  const handleAddSection = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedProjectId || !sectionTitle.trim() || !sectionImageFile) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const imageUrl = reader.result as string;
-      setProjects((prev) =>
-        prev.map((project) =>
-          project.id === selectedProjectId
-            ? {
-                ...project,
-                sections: [
-                  ...project.sections,
-                  {
-                    id: Date.now(),
-                    title: sectionTitle.trim(),
-                    text: sectionText.trim(),
-                    image: imageUrl,
-                  },
-                ],
-              }
-            : project
-        )
-      );
-    };
-    reader.readAsDataURL(sectionImageFile);
+    try {
+      setSaving(true);
+      const imageUrl = await uploadImage(sectionImageFile, "sections");
 
-    setSectionTitle("");
-    setSectionText("");
-    setSectionImageFile(null);
-    e.currentTarget.reset();
+      const { error } = await supabase.from("project_sections").insert({
+        project_id: selectedProjectId,
+        title: sectionTitle.trim(),
+        text: sectionText.trim() || null,
+        image_url: imageUrl,
+      });
+
+      if (error) throw error;
+
+      setSectionTitle("");
+      setSectionText("");
+      setSectionImageFile(null);
+      e.currentTarget.reset();
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Could not add this section.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const selectedProject = useMemo(
@@ -248,25 +304,23 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const openProjectDetails = (projectId: number) => {
     setSelectedProjectId(projectId);
     setViewMode("project-details");
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const openAllProjects = () => {
     setViewMode("all-projects");
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goHome = () => {
     setViewMode("home");
     setSelectedProjectId(null);
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  if (loading) {
+    return <div className="mt-12 text-sm text-black/60">Loading projects...</div>;
+  }
 
   if (viewMode === "project-details" && selectedProject) {
     return (
@@ -334,7 +388,8 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
             />
             <button
               type="submit"
-              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 md:w-fit"
+              disabled={saving}
+              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 md:w-fit disabled:opacity-50"
             >
               Add Section To This Project
             </button>
@@ -488,7 +543,8 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
           <div className="flex flex-wrap gap-3 md:col-span-2">
             <button
               type="submit"
-              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              disabled={saving}
+              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {editingId !== null ? "Save Changes" : "Add Project"}
             </button>
@@ -571,11 +627,7 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
-                    <p className="text-2xl font-semibold">
-                      {selectedProjectId === project.id
-                        ? selectedProjectSections.length
-                        : project.sections.length}
-                    </p>
+                    <p className="text-2xl font-semibold">{project.sections.length}</p>
                     <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">
                       Spaces
                     </p>
