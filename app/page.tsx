@@ -2,6 +2,12 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 type ProjectSection = {
   id: number;
@@ -65,24 +71,27 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const [sectionImageFile, setSectionImageFile] = useState<File | null>(null);
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem("vertex-projects");
-    if (savedProjects) {
-      const parsedProjects = JSON.parse(savedProjects);
+  const fetchProjects = async () => {
+    const { data } = await supabase.from("projects").select("*");
+
+    if (data) {
       setProjects(
-        parsedProjects.map((project: any) => ({
-          ...project,
-          sections: Array.isArray(project.sections) ? project.sections : [],
-          description: typeof project.description === "string" ? project.description : "",
-          badge: project.badge === "NEW" || project.badge === "SALE" ? project.badge : "",
-          newPrice: typeof project.newPrice === "string" ? project.newPrice : "",
+        data.map((p: any) => ({
+          id: p.id,
+          image: p.image_url,
+          name: p.name,
+          oldPrice: p.old_price,
+          newPrice: p.new_price || "",
+          badge: p.badge || "",
+          description: p.description || "",
+          sections: [],
         }))
       );
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    localStorage.setItem("vertex-projects", JSON.stringify(projects));
-  }, [projects]);
+  fetchProjects();
+}, []);
 
   const resetForm = () => {
     setName("");
