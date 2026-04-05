@@ -457,49 +457,19 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
+              className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.10)]"
             >
-              <div className="relative h-[520px] w-full overflow-hidden">
+              <div className="relative h-[460px] w-full overflow-hidden">
                 <img
                   src={project.image}
                   alt={project.name}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-black/60" />
 
-                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/60" />
-
-                {project.badge && (
-                  <div className="absolute left-5 top-5 z-10">
-                    <div
-                      className="relative flex flex-col items-center animate-[swing_2.5s_ease-in-out_infinite]"
-                      style={{ transformOrigin: "top center" }}
-                    >
-                      <div className="h-6 w-[2px] bg-white/50"></div>
-                      <div
-                        className={`relative rounded-md px-3 py-2 text-[10px] font-semibold tracking-[0.25em] text-white shadow-md ${
-                          project.badge === "SALE" ? "bg-red-500" : "bg-black/85"
-                        }`}
-                      >
-                        {project.badge}
-                        <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">
-                        Project
-                      </p>
-                      <h3 className="mt-2 text-2xl font-semibold leading-tight">
-                        {project.name}
-                      </h3>
-                    </div>
-                    <p className="pt-2 text-xs text-white/70">Rating 4.8</p>
-                  </div>
-
+                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">Project</p>
+                  <h3 className="mt-2 text-2xl font-semibold leading-tight">{project.name}</h3>
                   <div className="mt-3 flex items-center gap-3">
                     {project.newPrice ? (
                       <>
@@ -510,53 +480,13 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
                       <p className="text-xl font-semibold text-white">{project.oldPrice}</p>
                     )}
                   </div>
-
-                  {project.description && (
-                    <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
-                      {project.description}
-                    </p>
-                  )}
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
-                      <p className="text-2xl font-semibold">{project.sections.length}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">Spaces</p>
-                    </div>
-                    <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
-                      <p className="text-2xl font-semibold">
-                        {project.newPrice ? "Offer" : "Ready"}
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">Status</p>
-                    </div>
-                  </div>
-
-                  <Link href={`/project/${project.id}`}>
-                    <button
-                      type="button"
-                      className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-                    >
-                      Read More About This Project
-                    </button>
-                  </Link>
-
-                  {isAdmin && (
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(project)}
-                        className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(project.id)}
-                        className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => openProjectDetails(project.id)}
+                    className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                  >
+                    Read More About This Project
+                  </button>
                 </div>
               </div>
             </div>
@@ -596,165 +526,4 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
           <input
             type="text"
             value={newPrice || ""}
-            onChange={(e) => setNewPrice(e.target.value)}
-            placeholder="Enter new price (optional)"
-            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-          />
-          <textarea
-            value={description || ""}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short project description"
-            className="min-h-[120px] rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none md:col-span-2"
-          />
-          <select
-            value={badge}
-            onChange={(e) => setBadge(e.target.value as "NEW" | "SALE" | "")}
-            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-          >
-            <option value="">No badge</option>
-            <option value="NEW">NEW</option>
-            <option value="SALE">SALE</option>
-          </select>
-          <div className="flex flex-wrap gap-3 md:col-span-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {editingId !== null ? "Save Changes" : "Add Project"}
-            </button>
-            {editingId !== null && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-2xl border border-black/10 px-6 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      )}
-
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-        {projects.slice(0, 3).map((project) => (
-          <div
-            key={project.id}
-            className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
-          >
-            <div className="relative h-[520px] w-full overflow-hidden">
-              <img
-                src={project.image}
-                alt={project.name}
-                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-              />
-
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/60" />
-
-              {project.badge && (
-                <div className="absolute left-5 top-5 z-10">
-                  <div
-                    className="relative flex flex-col items-center animate-[swing_2.5s_ease-in-out_infinite]"
-                    style={{ transformOrigin: "top center" }}
-                  >
-                    <div className="h-6 w-[2px] bg-white/50"></div>
-                    <div
-                      className={`relative rounded-md px-3 py-2 text-[10px] font-semibold tracking-[0.25em] text-white shadow-md ${
-                        project.badge === "SALE" ? "bg-red-500" : "bg-black/85"
-                      }`}
-                    >
-                      {project.badge}
-                      <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">
-                      Project
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold leading-tight">
-                      {project.name}
-                    </h3>
-                  </div>
-                  <p className="pt-2 text-xs text-white/70">Rating 4.8</p>
-                </div>
-
-                <div className="mt-3 flex items-center gap-3">
-                  {project.newPrice ? (
-                    <>
-                      <p className="text-base text-white/55 line-through">{project.oldPrice}</p>
-                      <p className="text-xl font-semibold text-white">{project.newPrice}</p>
-                    </>
-                  ) : (
-                    <p className="text-xl font-semibold text-white">{project.oldPrice}</p>
-                  )}
-                </div>
-
-                {project.description && (
-                  <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
-                    {project.description}
-                  </p>
-                )}
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
-                    <p className="text-2xl font-semibold">{project.sections.length}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">Spaces</p>
-                  </div>
-                  <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
-                    <p className="text-2xl font-semibold">
-                      {project.newPrice ? "Offer" : "Ready"}
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">Status</p>
-                  </div>
-                </div>
-
-                <Link href={`/project/${project.id}`}>
-                  <button
-                    type="button"
-                    className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-                  >
-                    Read More About This Project
-                  </button>
-                </Link>
-
-                {isAdmin && (
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(project)}
-                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(project.id)}
-                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10 flex justify-center">
-        <button
-          type="button"
-          onClick={openAllProjects}
-          className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-        >
-          See All Projects
-        </button>
-      </div>
-    </div>
-  );
-}
+            onChange={(e) => setNewPrice(e
