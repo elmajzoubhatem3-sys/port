@@ -644,14 +644,12 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
                   </div>
                 </div>
 
-                <Link href={`/project/${project.id}`}>
-                  <button
-                    type="button"
-                    className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-                  >
-                    Read More About This Project
-                  </button>
-                </Link>
+                <Link
+  href={`/project/${project.id}`}
+  className="mt-4 block w-full rounded-[1.25rem] bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:opacity-90"
+>
+  Read More About This Project
+</Link>
 
                 {isAdmin && (
                   <div className="mt-3 flex flex-wrap gap-3">
