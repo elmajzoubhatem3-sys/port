@@ -1,30 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-type ProjectSection = {
-  id: number;
-  title: string;
-  text: string;
-  image: string;
-};
-
-type ProjectItem = {
-  id: number;
-  image: string;
-  name: string;
-  oldPrice: string;
-  newPrice: string;
-  description: string;
-  sections: ProjectSection[];
-};
 
 type DbProject = {
   id: number;
@@ -41,6 +24,23 @@ type DbSection = {
   title: string;
   text: string | null;
   image_url: string;
+};
+
+type ProjectSection = {
+  id: number;
+  title: string;
+  text: string;
+  image: string;
+};
+
+type ProjectItem = {
+  id: number;
+  image: string;
+  name: string;
+  oldPrice: string;
+  newPrice: string;
+  description: string;
+  sections: ProjectSection[];
 };
 
 export default function ProjectDetailsPage({
@@ -74,12 +74,12 @@ export default function ProjectDetailsPage({
       }
 
       const mappedProject: ProjectItem = {
-        id: projectRow.id,
-        image: projectRow.image_url,
-        name: projectRow.name,
-        oldPrice: projectRow.old_price,
-        newPrice: projectRow.new_price ?? "",
-        description: projectRow.description ?? "",
+        id: (projectRow as DbProject).id,
+        image: (projectRow as DbProject).image_url,
+        name: (projectRow as DbProject).name,
+        oldPrice: (projectRow as DbProject).old_price,
+        newPrice: (projectRow as DbProject).new_price ?? "",
+        description: (projectRow as DbProject).description ?? "",
         sections: ((sectionRows || []) as DbSection[]).map((section) => ({
           id: section.id,
           title: section.title,
@@ -101,12 +101,17 @@ export default function ProjectDetailsPage({
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-white px-6 py-20 text-black">
-        <p>Project not found.</p>
-        <Link href="/" className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white">
-          Back Home
-        </Link>
-      </div>
+      <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-lg font-medium">Project not found.</p>
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white"
+          >
+            Back Home
+          </Link>
+        </div>
+      </main>
     );
   }
 
