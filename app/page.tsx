@@ -121,29 +121,27 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const fetchProjects = async () => {
-    setLoading(true);
+  setLoading(true);
 
-    const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
-      await Promise.all([
-        supabase
-          .from("projects")
-          .select("id,name,image_url,old_price,new_price,badge,description")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("project_sections")
-          .select("id,project_id,title,text,image_url")
-          .order("created_at", { ascending: true }),
-      ]);
+  const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
+    await Promise.all([
+      supabase
+        .from("projects")
+        .select("id,name,image_url,old_price,new_price,badge,description"),
+      supabase
+        .from("project_sections")
+        .select("id,project_id,title,text,image_url"),
+    ]);
 
-    if (projectsError || sectionsError) {
-      console.error(projectsError || sectionsError);
-      setLoading(false);
-      return;
-    }
-
-    setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
+  if (projectsError || sectionsError) {
+    console.error(projectsError || sectionsError);
     setLoading(false);
-  };
+    return;
+  }
+
+  setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
+  setLoading(false);
+};
 
   useEffect(() => {
     fetchProjects();
