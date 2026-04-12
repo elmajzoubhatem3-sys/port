@@ -56,7 +56,7 @@ function HeroScene() {
         src="/images/house.jpg"
         alt="VERTEX hero"
         className="w-full h-screen object-cover object-center"
-	style={{ imageRendering: "auto" }}
+        style={{ imageRendering: "auto" }}
         initial={{ scale: 1 }}
         animate={{ scale: [1, 1.05, 1] }}
         transition={{
@@ -441,12 +441,70 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
 
       {projects.length > 3 && (
         <div className="mt-10 flex justify-center">
-          <Link
-            href="/projects"
+          <a
+            href="#all-projects"
             className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
           >
             See All Projects
-          </Link>
+          </a>
+        </div>
+      )}
+
+      {projects.length > 3 && (
+        <div id="all-projects" className="mt-20">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-black/45">Archive</p>
+              <h3 className="mt-2 text-3xl font-semibold text-black md:text-5xl">
+                All Projects
+              </h3>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-black/55 md:text-base">
+              Explore the full collection beyond the three featured projects shown above.
+            </p>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.10)]"
+              >
+                <div className="relative h-[460px] w-full overflow-hidden">
+                  <img
+                    src={project.image}
+                    alt={project.name}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-black/60" />
+
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">
+                      Project
+                    </p>
+                    <h3 className="mt-2 text-2xl font-semibold leading-tight">{project.name}</h3>
+                    <div className="mt-3 flex items-center gap-3">
+                      {project.newPrice ? (
+                        <>
+                          <p className="text-base text-white/55 line-through">{project.oldPrice}</p>
+                          <p className="text-xl font-semibold text-white">{project.newPrice}</p>
+                        </>
+                      ) : (
+                        <p className="text-xl font-semibold text-white">{project.oldPrice}</p>
+                      )}
+                    </div>
+
+                    <Link
+                      href={`/project/${project.id}`}
+                      className="mt-4 block w-full rounded-[1.25rem] bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:opacity-90"
+                    >
+                      Read More About This Project
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
