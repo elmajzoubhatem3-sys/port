@@ -56,6 +56,7 @@ function HeroScene() {
         src="/images/house.jpg"
         alt="VERTEX hero"
         className="w-full h-screen object-cover object-center"
+	style={{ imageRendering: "auto" }}
         initial={{ scale: 1 }}
         animate={{ scale: [1, 1.05, 1] }}
         transition={{
