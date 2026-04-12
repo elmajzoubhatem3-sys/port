@@ -127,10 +127,10 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
     await Promise.all([
       supabase
         .from("projects")
-        .select("id,name,image_url,old_price,new_price,badge,description"),
+        .select("*")
       supabase
         .from("project_sections")
-        .select("id,project_id,title,text,image_url"),
+        .select("*")
     ]);
 
   if (projectsError || sectionsError) {
