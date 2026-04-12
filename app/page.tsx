@@ -55,7 +55,7 @@ function HeroScene() {
       <motion.img
         src="/images/house.jpg"
         alt="VERTEX hero"
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain md:object-cover"
         initial={{ scale: 1 }}
         animate={{ scale: [1, 1.05, 1] }}
         transition={{
