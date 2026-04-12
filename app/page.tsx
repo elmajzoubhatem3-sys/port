@@ -121,27 +121,25 @@ function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const fetchProjects = async () => {
-  setLoading(true);
+    setLoading(true);
 
-  const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
-    await Promise.all([
-      supabase
-        .from("projects")
-        .select("*"),
-      supabase
-        .from("project_sections")
-        .select("*"),
-    ]);
+    const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
+      await Promise.all([
+        supabase.from("projects").select("*"),
+        supabase.from("project_sections").select("*"),
+      ]);
 
-  if (projectsError || sectionsError) {
-    console.error(projectsError || sectionsError);
+    if (projectsError || sectionsError) {
+      console.error(projectsError || sectionsError);
+      setLoading(false);
+      return;
+    }
+
+    setProjects(
+      mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[])
+    );
     setLoading(false);
-    return;
-  }
-
-  setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
-  setLoading(false);
-};
+  };
 
   useEffect(() => {
     fetchProjects();
