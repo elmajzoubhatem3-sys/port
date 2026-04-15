@@ -46,7 +46,17 @@ export default function ProjectDetailsPage({
   }, []);
 
   const fetchProject = async () => {
-    setLoading(true);
+  const { data: sectionRows } = await supabase
+    .from("project_sections")
+    .select("*")
+    .eq("project_id", params.id);
+
+  // شو نحفظ الغرف
+  const mappedProject = {
+    sections: sectionRows || [],
+  };
+  setProject(mappedProject);
+};
 
     const { data: projectRow, error: projectError } = await supabase
       .from("projects")
