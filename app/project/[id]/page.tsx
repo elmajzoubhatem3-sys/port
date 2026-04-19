@@ -14,7 +14,7 @@ type ProjectSection = {
   id: number;
   title: string;
   text: string;
-  image: string;
+  images: string[];
 };
 
 type ProjectItem = {
@@ -37,13 +37,27 @@ export default function ProjectDetailsPage() {
 
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionText, setSectionText] = useState("");
-  const [sectionImageFile, setSectionImageFile] = useState<File | null>(null);
+  const [sectionImageFiles, setSectionImageFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const adminStatus = localStorage.getItem("vertex-admin") === "true";
     setIsAdmin(adminStatus);
   }, []);
+
+  const parseImages = (value: string | null | undefined): string[] => {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item) => typeof item === "string");
+      }
+      if (typeof parsed === "string") return [parsed];
+      return [];
+    } catch {
+      return [value];
+    }
+  };
 
   const fetchProject = async () => {
     if (!projectId) return;
@@ -83,7 +97,7 @@ export default function ProjectDetailsPage() {
         id: section.id,
         title: section.title ?? "",
         text: section.text ?? "",
-        image: section.image_url ?? "",
+        images: parseImages(section.image_url),
       })),
     };
 
@@ -98,38 +112,43 @@ export default function ProjectDetailsPage() {
   const handleAddSection = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!projectId || !sectionTitle.trim() || !sectionImageFile) return;
+    if (!projectId || !sectionTitle.trim() || sectionImageFiles.length === 0) return;
 
     try {
       setSaving(true);
 
-      const fileExt = sectionImageFile.name.split(".").pop() || "jpg";
-      const fileName = `sections/${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}.${fileExt}`;
+      const uploadedImages: string[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from("portfolio")
-        .upload(fileName, sectionImageFile, {
-          upsert: false,
-        });
+      for (const file of sectionImageFiles) {
+        const fileExt = file.name.split(".").pop() || "jpg";
+        const fileName = `sections/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.${fileExt}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from("portfolio")
+          .upload(fileName, file, {
+            upsert: false,
+          });
 
-      const { data } = supabase.storage.from("portfolio").getPublicUrl(fileName);
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from("portfolio").getPublicUrl(fileName);
+        uploadedImages.push(data.publicUrl);
+      }
 
       const { error: insertError } = await supabase.from("project_sections").insert({
         project_id: Number(projectId),
         title: sectionTitle.trim(),
         text: sectionText.trim() || null,
-        image_url: data.publicUrl,
+        image_url: JSON.stringify(uploadedImages),
       });
 
       if (insertError) throw insertError;
 
       setSectionTitle("");
       setSectionText("");
-      setSectionImageFile(null);
+      setSectionImageFiles([]);
 
       await fetchProject();
     } catch (error) {
@@ -178,7 +197,7 @@ export default function ProjectDetailsPage() {
           <img
             src={project.image}
             alt={project.name}
-            className="w-full h-[520px] object-cover"
+            className="h-[520px] w-full object-cover"
           />
           <div className="px-6 py-8 md:px-10">
             <h1 className="text-4xl font-semibold">{project.name}</h1>
@@ -191,7 +210,7 @@ export default function ProjectDetailsPage() {
               {project.newPrice ? (
                 <>
                   <span className="line-through text-gray-400">{project.oldPrice}</span>
-                  <span className="ml-3 text-green-600 text-2xl">{project.newPrice}</span>
+                  <span className="ml-3 text-2xl text-green-600">{project.newPrice}</span>
                 </>
               ) : (
                 <span className="text-2xl">{project.oldPrice}</span>
@@ -208,7 +227,8 @@ export default function ProjectDetailsPage() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setSectionImageFile(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => setSectionImageFiles(Array.from(e.target.files || []))}
             />
             <input
               type="text"
@@ -238,14 +258,20 @@ export default function ProjectDetailsPage() {
             project.sections.map((section) => (
               <div
                 key={section.id}
-                className="grid gap-6 rounded-2xl bg-[#faf8f4] p-5 md:grid-cols-2"
+                className="rounded-2xl bg-[#faf8f4] p-5"
               >
-                <img
-                  src={section.image}
-                  alt={section.title}
-                  className="h-[300px] w-full rounded-xl object-cover"
-                />
-                <div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {section.images.map((img, index) => (
+                    <img
+                      key={index}
+                      src={img}
+                      alt={`${section.title} ${index + 1}`}
+                      className="h-[300px] w-full rounded-xl object-cover"
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-5">
                   <h2 className="text-2xl font-semibold">{section.title}</h2>
                   <p className="mt-2 text-black/60">{section.text}</p>
                 </div>
