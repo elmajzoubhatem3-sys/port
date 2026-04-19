@@ -47,12 +47,18 @@ export default function ProjectDetailsPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
+
     try {
       const parsed = JSON.parse(value);
+
       if (Array.isArray(parsed)) {
         return parsed.filter((item) => typeof item === "string");
       }
-      if (typeof parsed === "string") return [parsed];
+
+      if (typeof parsed === "string") {
+        return [parsed];
+      }
+
       return [];
     } catch {
       return [value];
@@ -60,7 +66,10 @@ export default function ProjectDetailsPage() {
   };
 
   const fetchProject = async () => {
-    if (!projectId) return;
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
 
@@ -88,8 +97,8 @@ export default function ProjectDetailsPage() {
 
     const mappedProject: ProjectItem = {
       id: projectRow.id,
-      image: projectRow.image_url,
-      name: projectRow.name,
+      image: projectRow.image_url ?? "",
+      name: projectRow.name ?? "",
       oldPrice: projectRow.old_price ?? "",
       newPrice: projectRow.new_price ?? "",
       description: projectRow.description ?? "",
@@ -112,7 +121,10 @@ export default function ProjectDetailsPage() {
   const handleAddSection = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!projectId || !sectionTitle.trim() || sectionImageFiles.length === 0) return;
+    if (!projectId || !sectionTitle.trim() || sectionImageFiles.length === 0) {
+      alert("Please add room name and at least one image.");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -229,7 +241,9 @@ export default function ProjectDetailsPage() {
               accept="image/*"
               multiple
               onChange={(e) => setSectionImageFiles(Array.from(e.target.files || []))}
+              className="rounded-xl border bg-white p-3"
             />
+
             <input
               type="text"
               placeholder="Room name"
@@ -237,12 +251,14 @@ export default function ProjectDetailsPage() {
               onChange={(e) => setSectionTitle(e.target.value)}
               className="rounded-xl border p-3"
             />
+
             <textarea
               placeholder="Description"
               value={sectionText}
               onChange={(e) => setSectionText(e.target.value)}
               className="rounded-xl border p-3"
             />
+
             <button
               type="submit"
               disabled={saving}
@@ -256,10 +272,7 @@ export default function ProjectDetailsPage() {
         <div className="mt-10 grid gap-8">
           {project.sections.length > 0 ? (
             project.sections.map((section) => (
-              <div
-                key={section.id}
-                className="rounded-2xl bg-[#faf8f4] p-5"
-              >
+              <div key={section.id} className="rounded-2xl bg-[#faf8f4] p-5">
                 <div className="grid gap-4 md:grid-cols-2">
                   {section.images.map((img, index) => (
                     <img
