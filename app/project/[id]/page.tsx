@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -26,11 +27,10 @@ type ProjectItem = {
   sections: ProjectSection[];
 };
 
-export default function ProjectDetailsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function ProjectDetailsPage() {
+  const params = useParams();
+  const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const [project, setProject] = useState<ProjectItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -46,28 +46,23 @@ export default function ProjectDetailsPage({
   }, []);
 
   const fetchProject = async () => {
-  const { data: sectionRows } = await supabase
-    .from("project_sections")
-    .select("*")
-    .eq("project_id", params.id);
+    if (!projectId) return;
 
-  // شو نحفظ الغرف
-  const mappedProject = {
-    sections: sectionRows || [],
-  };
-  setProject(mappedProject);
-};
+    setLoading(true);
+
+    const numericId = Number(projectId);
 
     const { data: projectRow, error: projectError } = await supabase
       .from("projects")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", numericId)
       .single();
 
     const { data: sectionRows, error: sectionsError } = await supabase
       .from("project_sections")
       .select("*")
-      .eq("project_id", params.id);
+      .eq("project_id", numericId)
+      .order("created_at", { ascending: true });
 
     if (projectError || sectionsError || !projectRow) {
       console.error("projectError:", projectError);
@@ -98,12 +93,12 @@ export default function ProjectDetailsPage({
 
   useEffect(() => {
     fetchProject();
-  }, [params.id]);
+  }, [projectId]);
 
   const handleAddSection = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!sectionTitle.trim() || !sectionImageFile) return;
+    if (!projectId || !sectionTitle.trim() || !sectionImageFile) return;
 
     try {
       setSaving(true);
@@ -124,7 +119,7 @@ export default function ProjectDetailsPage({
       const { data } = supabase.storage.from("portfolio").getPublicUrl(fileName);
 
       const { error: insertError } = await supabase.from("project_sections").insert({
-        project_id: Number(params.id),
+        project_id: Number(projectId),
         title: sectionTitle.trim(),
         text: sectionText.trim() || null,
         image_url: data.publicUrl,
