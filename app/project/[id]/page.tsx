@@ -206,11 +206,14 @@ export default function ProjectDetailsPage() {
         </Link>
 
         <div className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
-          <img
-            src={project.image}
-            alt={project.name}
-            className="h-[520px] w-full object-cover"
-          />
+          <div className="w-full overflow-hidden">
+            <img
+              src={project.image}
+              alt={project.name}
+              className="aspect-square w-full object-cover"
+            />
+          </div>
+
           <div className="px-6 py-8 md:px-10">
             <h1 className="text-4xl font-semibold">{project.name}</h1>
 
@@ -279,7 +282,7 @@ export default function ProjectDetailsPage() {
                       key={index}
                       src={img}
                       alt={`${section.title} ${index + 1}`}
-                      className="h-[300px] w-full rounded-xl object-cover"
+                      className="aspect-square w-full rounded-xl object-cover"
                     />
                   ))}
                 </div>
