@@ -385,7 +385,7 @@ export function ProjectsManager({
               key={project.id}
               className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
             >
-              <div className="relative h-[360px] w-full overflow-hidden">
+              <div className="relative h-[250px] w-full overflow-hidden">
                 <img
                   src={project.image}
                   alt={project.name}
