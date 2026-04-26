@@ -47,58 +47,35 @@ export default function ProjectDetailsPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
-
     try {
       const parsed = JSON.parse(value);
-
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item) => typeof item === "string");
-      }
-
-      if (typeof parsed === "string") {
-        return [parsed];
-      }
-
-      return [];
+      if (Array.isArray(parsed)) return parsed;
+      return [parsed];
     } catch {
       return [value];
     }
   };
 
   const fetchProject = async () => {
-    if (!projectId) {
-      setLoading(false);
-      return;
-    }
+    if (!projectId) return;
 
     setLoading(true);
 
-    const numericId = Number(projectId);
-
-    const { data: projectRow, error: projectError } = await supabase
+    const { data: projectRow } = await supabase
       .from("projects")
       .select("*")
-      .eq("id", numericId)
+      .eq("id", projectId)
       .single();
 
-    const { data: sectionRows, error: sectionsError } = await supabase
+    const { data: sectionRows } = await supabase
       .from("project_sections")
       .select("*")
-      .eq("project_id", numericId)
-      .order("created_at", { ascending: true });
-
-    if (projectError || sectionsError || !projectRow) {
-      console.error("projectError:", projectError);
-      console.error("sectionsError:", sectionsError);
-      setProject(null);
-      setLoading(false);
-      return;
-    }
+      .eq("project_id", projectId);
 
     const mappedProject: ProjectItem = {
       id: projectRow.id,
-      image: projectRow.image_url ?? "",
-      name: projectRow.name ?? "",
+      image: projectRow.image_url,
+      name: projectRow.name,
       oldPrice: projectRow.old_price ?? "",
       newPrice: projectRow.new_price ?? "",
       description: projectRow.description ?? "",
@@ -121,184 +98,95 @@ export default function ProjectDetailsPage() {
   const handleAddSection = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!projectId || !sectionTitle.trim() || sectionImageFiles.length === 0) {
-      alert("Please add room name and at least one image.");
-      return;
+    if (!sectionTitle || sectionImageFiles.length === 0) return;
+
+    const uploadedImages: string[] = [];
+
+    for (const file of sectionImageFiles) {
+      const fileName = `sections/${Date.now()}-${file.name}`;
+      await supabase.storage.from("portfolio").upload(fileName, file);
+      const { data } = supabase.storage.from("portfolio").getPublicUrl(fileName);
+      uploadedImages.push(data.publicUrl);
     }
 
-    try {
-      setSaving(true);
+    await supabase.from("project_sections").insert({
+      project_id: projectId,
+      title: sectionTitle,
+      text: sectionText,
+      image_url: JSON.stringify(uploadedImages),
+    });
 
-      const uploadedImages: string[] = [];
+    setSectionTitle("");
+    setSectionText("");
+    setSectionImageFiles([]);
 
-      for (const file of sectionImageFiles) {
-        const fileExt = file.name.split(".").pop() || "jpg";
-        const fileName = `sections/${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("portfolio")
-          .upload(fileName, file, {
-            upsert: false,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage.from("portfolio").getPublicUrl(fileName);
-        uploadedImages.push(data.publicUrl);
-      }
-
-      const { error: insertError } = await supabase.from("project_sections").insert({
-        project_id: Number(projectId),
-        title: sectionTitle.trim(),
-        text: sectionText.trim() || null,
-        image_url: JSON.stringify(uploadedImages),
-      });
-
-      if (insertError) throw insertError;
-
-      setSectionTitle("");
-      setSectionText("");
-      setSectionImageFiles([]);
-
-      await fetchProject();
-    } catch (error) {
-      console.error(error);
-      alert("Could not add room.");
-    } finally {
-      setSaving(false);
-    }
+    fetchProject();
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white px-6 py-20 text-black">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!project) {
-    return (
-      <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
-        <div className="mx-auto max-w-5xl">
-          <p className="text-lg font-medium">Not found</p>
-          <Link
-            href="/"
-            className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white"
-          >
-            Back Home
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  if (loading) return <div>Loading...</div>;
+  if (!project) return <div>Not found</div>;
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black md:px-14">
       <div className="mx-auto max-w-7xl">
-        <Link
-          href="/"
-          className="mb-8 inline-block rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold text-black hover:bg-black hover:text-white"
-        >
-          Back To Home
+
+        <Link href="/" className="mb-8 inline-block">
+          Back Home
         </Link>
 
-        <div className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
-          <div className="w-full overflow-hidden">
-            <img
-              src={project.image}
-              alt={project.name}
-              className="aspect-square w-full object-cover"
-            />
-          </div>
+        {/* ❌ شلنا صورة المشروع من هون */}
 
-          <div className="px-6 py-8 md:px-10">
-            <h1 className="text-4xl font-semibold">{project.name}</h1>
+        <div className="px-6 py-8">
+          <h1 className="text-4xl font-semibold">{project.name}</h1>
 
-            {project.description && (
-              <p className="mt-4 text-black/70">{project.description}</p>
+          {project.description && (
+            <p className="mt-4 text-black/70">{project.description}</p>
+          )}
+
+          <div className="mt-4">
+            {project.newPrice ? (
+              <>
+                <span className="line-through text-gray-400">{project.oldPrice}</span>
+                <span className="ml-3 text-2xl text-green-600">{project.newPrice}</span>
+              </>
+            ) : (
+              <span className="text-2xl">{project.oldPrice}</span>
             )}
-
-            <div className="mt-4">
-              {project.newPrice ? (
-                <>
-                  <span className="line-through text-gray-400">{project.oldPrice}</span>
-                  <span className="ml-3 text-2xl text-green-600">{project.newPrice}</span>
-                </>
-              ) : (
-                <span className="text-2xl">{project.oldPrice}</span>
-              )}
-            </div>
           </div>
         </div>
 
         {isAdmin && (
-          <form
-            onSubmit={handleAddSection}
-            className="mt-8 grid gap-4 rounded-2xl bg-gray-100 p-6"
-          >
+          <form onSubmit={handleAddSection} className="mt-8">
             <input
               type="file"
-              accept="image/*"
               multiple
               onChange={(e) => setSectionImageFiles(Array.from(e.target.files || []))}
-              className="rounded-xl border bg-white p-3"
             />
-
             <input
-              type="text"
-              placeholder="Room name"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              className="rounded-xl border p-3"
+              placeholder="Room name"
             />
-
             <textarea
-              placeholder="Description"
               value={sectionText}
               onChange={(e) => setSectionText(e.target.value)}
-              className="rounded-xl border p-3"
             />
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl bg-black p-3 text-white disabled:opacity-50"
-            >
-              {saving ? "Adding..." : "Add Room"}
-            </button>
+            <button>Add Room</button>
           </form>
         )}
 
-        <div className="mt-10 grid gap-8">
-          {project.sections.length > 0 ? (
-            project.sections.map((section) => (
-              <div key={section.id} className="rounded-2xl bg-[#faf8f4] p-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {section.images.map((img, index) => (
-                    <img
-                      key={index}
-                      src={img}
-                      alt={`${section.title} ${index + 1}`}
-                      className="aspect-square w-full rounded-xl object-cover"
-                    />
-                  ))}
-                </div>
-
-                <div className="mt-5">
-                  <h2 className="text-2xl font-semibold">{section.title}</h2>
-                  <p className="mt-2 text-black/60">{section.text}</p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-2xl bg-[#faf8f4] p-6 text-sm text-black/55 shadow-sm">
-              No rooms added yet.
+        <div className="mt-10">
+          {project.sections.map((section) => (
+            <div key={section.id}>
+              {section.images.map((img, i) => (
+                <img key={i} src={img} className="aspect-square w-full" />
+              ))}
+              <h2>{section.title}</h2>
+              <p>{section.text}</p>
             </div>
-          )}
+          ))}
         </div>
+
       </div>
     </main>
   );
