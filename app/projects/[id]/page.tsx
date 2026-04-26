@@ -205,35 +205,6 @@ export default function ProjectDetailsPage() {
           Back To Home
         </Link>
 
-        <div className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
-          <div className="mx-auto max-w-xl overflow-hidden rounded-[2rem]">
-            <img
-              src={project.image}
-              alt={project.name}
-              className="aspect-square w-full object-cover"
-             />
-</div>
-
-          <div className="px-6 py-8 md:px-10">
-            <h1 className="text-4xl font-semibold">{project.name}</h1>
-
-            {project.description && (
-              <p className="mt-4 text-black/70">{project.description}</p>
-            )}
-
-            <div className="mt-4">
-              {project.newPrice ? (
-                <>
-                  <span className="line-through text-gray-400">{project.oldPrice}</span>
-                  <span className="ml-3 text-2xl text-green-600">{project.newPrice}</span>
-                </>
-              ) : (
-                <span className="text-2xl">{project.oldPrice}</span>
-              )}
-            </div>
-          </div>
-        </div>
-
         {isAdmin && (
           <form
             onSubmit={handleAddSection}
