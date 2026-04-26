@@ -454,7 +454,7 @@ export function ProjectsManager({
                   )}
 
                   <Link
-                    href={`/project/${project.id}`}
+ 	            href={`/projects/${project.id}`}
                     className="mt-4 block w-full rounded-[1.25rem] bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:opacity-90"
                   >
                     Read More About This Project
