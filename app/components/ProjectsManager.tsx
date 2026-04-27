@@ -326,7 +326,7 @@ export function ProjectsManager({
 
               <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-semibold leading-tight">{project.name}</h3>
+                  <h3 className="text-2xl font-semibold leading-tight tracking-wide">{project.name}</h3>
 
                   <div className="shrink-0 text-right">
                     {project.newPrice ? (
