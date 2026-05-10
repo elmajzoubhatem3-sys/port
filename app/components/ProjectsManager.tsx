@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
@@ -305,8 +306,12 @@ export function ProjectsManager({
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
         {visibleProjects.map((project) => (
-          <div
+          <motion.div
             key={project.id}
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           >
             <div className="relative h-[250px] w-full overflow-hidden">
@@ -326,7 +331,9 @@ export function ProjectsManager({
 
               <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-semibold leading-tight tracking-wide">{project.name}</h3>
+                  <h3 className="text-2xl font-semibold leading-tight tracking-wide">
+                    {project.name}
+                  </h3>
 
                   <div className="shrink-0 text-right">
                     {project.newPrice ? (
@@ -374,7 +381,7 @@ export function ProjectsManager({
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 

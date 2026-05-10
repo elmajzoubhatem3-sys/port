@@ -1,10 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ProjectsManager } from "./components/ProjectsManager";
-
-const ADMIN_PASSWORD = "vertex123";
 
 function HeroScene() {
   return (
@@ -27,39 +24,6 @@ function HeroScene() {
 }
 
 export default function VertexPortfolioHomePage() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
-  useEffect(() => {
-    const adminStatus = localStorage.getItem("vertex-admin") === "true";
-    setIsAdmin(adminStatus);
-  }, []);
-
-  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (password === ADMIN_PASSWORD) {
-      setIsAdmin(true);
-      setShowLogin(false);
-      setPassword("");
-      setLoginError("");
-      localStorage.setItem("vertex-admin", "true");
-      return;
-    }
-
-    setLoginError("Wrong password");
-  };
-
-  const handleLogout = () => {
-    setIsAdmin(false);
-    setShowLogin(false);
-    setPassword("");
-    setLoginError("");
-    localStorage.removeItem("vertex-admin");
-  };
-
   return (
     <main className="min-h-screen overflow-hidden bg-[#0b0b0b] text-white">
       <section className="relative h-screen w-full">
@@ -69,49 +33,6 @@ export default function VertexPortfolioHomePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
         <div className="absolute inset-0 bg-black/20" />
 
-        <div className="absolute right-6 top-6 z-20 md:right-10 md:top-10">
-          {!isAdmin ? (
-            <button
-              type="button"
-              onClick={() => setShowLogin((prev) => !prev)}
-              className="rounded-2xl border border-white/20 bg-black/35 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/50"
-            >
-              Admin Login
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-2xl border border-white/20 bg-black/35 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/50"
-            >
-              Logout
-            </button>
-          )}
-
-          {showLogin && !isAdmin && (
-            <form
-              onSubmit={handleLogin}
-              className="mt-3 w-[280px] rounded-3xl border border-white/15 bg-black/70 p-4 backdrop-blur-xl"
-            >
-              <p className="mb-3 text-sm font-medium text-white">Enter admin password</p>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/45"
-              />
-              {loginError && <p className="mt-2 text-sm text-red-300">{loginError}</p>}
-              <button
-                type="submit"
-                className="mt-3 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90"
-              >
-                Login
-              </button>
-            </form>
-          )}
-        </div>
-
         <div className="relative z-10 flex h-full items-end px-6 pb-14 md:px-14 md:pb-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -119,9 +40,6 @@ export default function VertexPortfolioHomePage() {
             transition={{ duration: 0.8 }}
             className="max-w-3xl"
           >
-            <p className="mb-3 text-sm uppercase tracking-[0.35em] text-white/70">
-              VERTEX Homes Studio
-            </p>
             <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
               Designing elevated homes with a luxury modern vision.
             </h1>
@@ -155,7 +73,6 @@ export default function VertexPortfolioHomePage() {
 
       <section id="projects" className="bg-white px-6 py-20 text-black md:px-14">
         <div className="mx-auto max-w-7xl">
-          <p className="text-sm uppercase tracking-[0.3em] text-black/50">Selected Projects</p>
           <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <h2 className="text-3xl font-semibold md:text-5xl">Selected Work</h2>
             <p className="max-w-xl text-sm leading-7 text-black/55 md:text-base">
@@ -164,7 +81,7 @@ export default function VertexPortfolioHomePage() {
             </p>
           </div>
 
-          <ProjectsManager isAdmin={isAdmin} mode="featured" />
+          <ProjectsManager isAdmin={false} mode="featured" />
         </div>
       </section>
 
