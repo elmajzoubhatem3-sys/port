@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { ProjectsManager } from "./components/ProjectsManager";
 
 function HeroScene() {
@@ -86,6 +87,15 @@ export default function VertexPortfolioHomePage() {
           </div>
 
           <ProjectsManager isAdmin={false} mode="featured" />
+
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/projects"
+              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              View All Projects
+            </Link>
+          </div>
         </div>
       </section>
 
