@@ -70,11 +70,15 @@ function mapProjects(projects: DbProject[], sections: DbSection[]): ProjectItem[
 
 async function uploadImage(file: File, folder: string) {
   const ext = file.name.split(".").pop() || "jpg";
-  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const fileName = `${folder}/${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}.${ext}`;
 
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(fileName, file, {
-    upsert: false,
-  });
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(fileName, file, {
+      upsert: false,
+    });
 
   if (error) throw error;
 
@@ -104,11 +108,13 @@ export function ProjectsManager({
   const fetchProjects = async () => {
     setLoading(true);
 
-    const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] =
-      await Promise.all([
-        supabase.from("projects").select("*"),
-        supabase.from("project_sections").select("*"),
-      ]);
+    const [
+      { data: projectRows, error: projectsError },
+      { data: sectionRows, error: sectionsError },
+    ] = await Promise.all([
+      supabase.from("projects").select("*"),
+      supabase.from("project_sections").select("*"),
+    ]);
 
     if (projectsError || sectionsError) {
       console.error(projectsError || sectionsError);
@@ -116,7 +122,13 @@ export function ProjectsManager({
       return;
     }
 
-    setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
+    setProjects(
+      mapProjects(
+        (projectRows || []) as DbProject[],
+        (sectionRows || []) as DbSection[]
+      )
+    );
+
     setLoading(false);
   };
 
@@ -148,7 +160,9 @@ export function ProjectsManager({
       setSaving(true);
 
       if (editingId !== null) {
-        const currentProject = projects.find((project) => project.id === editingId);
+        const currentProject = projects.find(
+          (project) => project.id === editingId
+        );
         let imageUrl = currentProject?.image || "";
 
         if (imageFile) {
@@ -314,73 +328,76 @@ export function ProjectsManager({
             transition={{ duration: 0.7, ease: "easeOut" }}
             className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           >
-            <div className="relative h-[250px] w-full overflow-hidden">
-              <img
-                src={project.image}
-                alt={project.name}
-                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-              />
+            <Link href={`/projects/${project.id}`}>
+              <div className="relative h-[250px] w-full overflow-hidden">
+                <img
+                  src={project.image}
+                  alt={project.name}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
 
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/60" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/60" />
 
-              {project.location && (
-                <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/55 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
-                  📍 {project.location}
-                </div>
-              )}
+                {project.location && (
+                  <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/55 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
+                    📍 {project.location}
+                  </div>
+                )}
 
-              <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-semibold leading-tight tracking-wide">
-                    {project.name}
-                  </h3>
+                <div className="absolute inset-x-0 bottom-0 z-10">
+                  <div className="bg-black/25 px-5 py-4 backdrop-blur-xl">
+                    <div className="flex items-center justify-between gap-4 text-white">
+                      <h3 className="text-2xl font-semibold leading-tight tracking-wide">
+                        {project.name}
+                      </h3>
 
-                  <div className="shrink-0 text-right">
-                    {project.newPrice ? (
-                      <>
-                        <p className="text-xs text-white/55 line-through">{project.oldPrice}</p>
-                        <p className="text-xl font-semibold text-white">{project.newPrice}</p>
-                      </>
-                    ) : (
-                      <p className="text-xl font-semibold text-white">{project.oldPrice}</p>
+                      <div className="shrink-0 text-right">
+                        {project.newPrice ? (
+                          <>
+                            <p className="text-xs text-white/55 line-through">
+                              {project.oldPrice}
+                            </p>
+                            <p className="text-xl font-semibold text-white">
+                              {project.newPrice}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-xl font-semibold text-white">
+                            {project.oldPrice}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {project.description && (
+                      <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
+                        {project.description}
+                      </p>
                     )}
                   </div>
                 </div>
-
-                {project.description && (
-                  <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
-                    {project.description}
-                  </p>
-                )}
-
-                <Link
-                  href={`/projects/${project.id}`}
-                  className="mt-4 block w-full rounded-[1.25rem] bg-white px-5 py-3 text-center text-sm font-semibold text-black transition hover:opacity-90"
-                >
-                  Read More About This Project
-                </Link>
-
-                {isAdmin && (
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(project)}
-                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(project.id)}
-                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
+            </Link>
+
+            {isAdmin && (
+              <div className="flex flex-wrap gap-3 bg-[#dfe5f2] p-5">
+                <button
+                  type="button"
+                  onClick={() => handleEdit(project)}
+                  className="rounded-2xl border border-black/10 bg-black px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                >
+                  Edit
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDelete(project.id)}
+                  className="rounded-2xl border border-black/10 bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
           </motion.div>
         ))}
       </div>
