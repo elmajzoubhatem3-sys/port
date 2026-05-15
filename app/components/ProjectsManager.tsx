@@ -395,7 +395,7 @@ export function ProjectsManager({
 
             <Link href={`/projects/${project.id}`}>
 
-              <div className="relative h-[400px] w-full overflow-hidden">
+              <div className="relative h-[300px] w-full overflow-hidden">
 
                 <img
                   src={project.image}
