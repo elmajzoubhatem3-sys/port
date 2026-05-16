@@ -332,7 +332,7 @@ export function ProjectsManager({
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/15" />
 
                 {project.location && (
                   <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/35 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
@@ -341,7 +341,7 @@ export function ProjectsManager({
                 )}
 
                 <div className="absolute inset-x-0 bottom-0 z-10 overflow-hidden rounded-b-[2rem]">
-                  <div className="bg-black/20 px-5 py-4 backdrop-blur-xl">
+                  <div className="bg-white/5 px-5 py-4 backdrop-blur-2xl">
                     <div className="flex items-center justify-between gap-4 text-white">
                       <h3 className="text-2xl font-semibold leading-tight tracking-wide">
                         {project.name}
