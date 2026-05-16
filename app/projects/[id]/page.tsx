@@ -196,7 +196,7 @@ export default function ProjectDetailsPage() {
                           key={index}
                           src={img}
                           alt={`Project image ${index + 1}`}
-                          className="aspect-square w-full rounded-xl object-cover"
+                          className="aspect-[16/10] w-full rounded-xl object-cover"
                         />
                       )
                     )}

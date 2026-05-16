@@ -325,14 +325,14 @@ export function ProjectsManager({
             className="group relative overflow-hidden rounded-[2rem] bg-[#cbd5e1] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           >
             <Link href={`/projects/${project.id}`}>
-              <div className="relative h-[300px] w-full overflow-hidden">
+              <div className="relative h-[220px] w-full overflow-hidden">
                 <img
                   src={project.image}
                   alt={project.name}
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/15" />
+                <div className="absolute inset-0 bg-gradient-to-t from-white/20 via-white/5 to-transparent backdrop-blur-[2px]" />
 
                 {project.location && (
                   <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/35 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
@@ -341,7 +341,7 @@ export function ProjectsManager({
                 )}
 
                 <div className="absolute inset-x-0 bottom-0 z-10 overflow-hidden rounded-b-[2rem]">
-                  <div className="bg-white/5 px-5 py-4 backdrop-blur-2xl">
+                  <div className="bg-transparent px-5 py-4">
                     <div className="flex items-center justify-between gap-4 text-white">
                       <h3 className="text-2xl font-semibold leading-tight tracking-wide">
                         {project.name}
