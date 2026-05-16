@@ -88,18 +88,7 @@ export default function VertexPortfolioHomePage() {
 
           <ProjectsManager isAdmin={false} mode="featured" />
 
-          <div className="mt-10 flex justify-center">
-            <Link
-              href="/projects"
-              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            >
-              View All Projects
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section id="about" className="bg-[#f7f3ee] px-6 py-20 text-black md:px-14">
+      <section id="about" className="bg-[#e5e7eb] px-6 py-20 text-black md:px-14">
         <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:items-start">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-black/45">About Us</p>

@@ -403,10 +403,10 @@ export function ProjectsManager({
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/25" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/20" />
 
                 {project.location && (
-                  <div className="absolute left-4 top-4 z-10 rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
+                  <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
                     📍 {project.location}
                   </div>
                 )}
