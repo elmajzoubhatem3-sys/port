@@ -322,7 +322,7 @@ export function ProjectsManager({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
+            className="group relative overflow-hidden rounded-[2rem] bg-[#cbd5e1] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           >
             <Link href={`/projects/${project.id}`}>
               <div className="relative h-[300px] w-full overflow-hidden">
@@ -335,7 +335,7 @@ export function ProjectsManager({
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
                 {project.location && (
-                  <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
+                  <div className="absolute left-4 top-4 z-10 rounded-2xl bg-black/35 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md">
                     📍 {project.location}
                   </div>
                 )}
