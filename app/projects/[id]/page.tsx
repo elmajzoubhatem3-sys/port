@@ -29,19 +29,28 @@ type ProjectItem = {
 
 export default function ProjectDetailsPage() {
   const params = useParams();
-  const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const projectId = Array.isArray(params.id)
+    ? params.id[0]
+    : params.id;
 
-  const [project, setProject] = useState<ProjectItem | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [project, setProject] =
+    useState<ProjectItem | null>(null);
 
-  const parseImages = (value: string | null | undefined): string[] => {
+  const [loading, setLoading] =
+    useState(true);
+
+  const parseImages = (
+    value: string | null | undefined
+  ): string[] => {
     if (!value) return [];
 
     try {
       const parsed = JSON.parse(value);
 
       if (Array.isArray(parsed)) {
-        return parsed.filter((item) => typeof item === "string");
+        return parsed.filter(
+          (item) => typeof item === "string"
+        );
       }
 
       if (typeof parsed === "string") {
@@ -57,14 +66,103 @@ export default function ProjectDetailsPage() {
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
 
-    if (lower.includes("bath") || lower.includes("حمام")) return "⌒";
-    if (lower.includes("bed") || lower.includes("غرفة") || lower.includes("room")) return "▱";
-    if (lower.includes("kitchen") || lower.includes("مطبخ")) return "▤";
-    if (lower.includes("living") || lower.includes("salon") || lower.includes("صالون")) return "▭";
-    if (lower.includes("pool")) return "○";
-    if (lower.includes("garage")) return "▰";
+    if (lower.includes("bath")) {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.8}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 13h16M6 13V8a2 2 0 114 0v5"
+          />
+        </svg>
+      );
+    }
 
-    return "□";
+    if (lower.includes("bed")) {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.8}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 10h18v7H3z"
+          />
+        </svg>
+      );
+    }
+
+    if (lower.includes("kitchen")) {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.8}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 3v18M18 3v18M6 12h12"
+          />
+        </svg>
+      );
+    }
+
+    if (
+      lower.includes("living") ||
+      lower.includes("salon")
+    ) {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.8}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 12h16v6H4z"
+          />
+        </svg>
+      );
+    }
+
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.8}
+      >
+        <rect
+          x="4"
+          y="4"
+          width="16"
+          height="16"
+          rx="2"
+        />
+      </svg>
+    );
   };
 
   const fetchProject = async () => {
@@ -77,21 +175,41 @@ export default function ProjectDetailsPage() {
 
     const numericId = Number(projectId);
 
-    const { data: projectRow, error: projectError } = await supabase
+    const {
+      data: projectRow,
+      error: projectError,
+    } = await supabase
       .from("projects")
       .select("*")
       .eq("id", numericId)
       .single();
 
-    const { data: sectionRows, error: sectionsError } = await supabase
+    const {
+      data: sectionRows,
+      error: sectionsError,
+    } = await supabase
       .from("project_sections")
       .select("*")
       .eq("project_id", numericId)
-      .order("created_at", { ascending: true });
+      .order("created_at", {
+        ascending: true,
+      });
 
-    if (projectError || sectionsError || !projectRow) {
-      console.error("projectError:", projectError);
-      console.error("sectionsError:", sectionsError);
+    if (
+      projectError ||
+      sectionsError ||
+      !projectRow
+    ) {
+      console.error(
+        "projectError:",
+        projectError
+      );
+
+      console.error(
+        "sectionsError:",
+        sectionsError
+      );
+
       setProject(null);
       setLoading(false);
       return;
@@ -103,13 +221,19 @@ export default function ProjectDetailsPage() {
       name: projectRow.name ?? "",
       oldPrice: projectRow.old_price ?? "",
       newPrice: projectRow.new_price ?? "",
-      description: projectRow.description ?? "",
-      sections: (sectionRows || []).map((section: any) => ({
-        id: section.id,
-        title: section.title ?? "",
-        text: section.text ?? "",
-        images: parseImages(section.image_url),
-      })),
+      description:
+        projectRow.description ?? "",
+
+      sections: (sectionRows || []).map(
+        (section: any) => ({
+          id: section.id,
+          title: section.title ?? "",
+          text: section.text ?? "",
+          images: parseImages(
+            section.image_url
+          ),
+        })
+      ),
     };
 
     setProject(mappedProject);
@@ -121,14 +245,21 @@ export default function ProjectDetailsPage() {
   }, [projectId]);
 
   if (loading) {
-    return <div className="min-h-screen bg-white px-6 py-20 text-black">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-white px-6 py-20 text-black">
+        Loading...
+      </div>
+    );
   }
 
   if (!project) {
     return (
       <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
         <div className="mx-auto max-w-5xl">
-          <p className="text-lg font-medium">Not found</p>
+
+          <p className="text-lg font-medium">
+            Not found
+          </p>
 
           <Link
             href="/"
@@ -136,6 +267,7 @@ export default function ProjectDetailsPage() {
           >
             Back Home
           </Link>
+
         </div>
       </main>
     );
@@ -143,7 +275,9 @@ export default function ProjectDetailsPage() {
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-black md:px-14">
+
       <div className="mx-auto max-w-7xl">
+
         <Link
           href="/"
           className="mb-8 inline-block rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold text-black hover:bg-black hover:text-white"
@@ -152,7 +286,10 @@ export default function ProjectDetailsPage() {
         </Link>
 
         <div className="mb-10 rounded-[2rem] bg-[#f3f4f6] p-6 shadow-sm">
-          <h1 className="text-3xl font-semibold md:text-4xl">{project.name}</h1>
+
+          <h1 className="text-3xl font-semibold md:text-4xl">
+            {project.name}
+          </h1>
 
           {project.description && (
             <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
@@ -162,45 +299,69 @@ export default function ProjectDetailsPage() {
 
           {project.sections.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-3">
-              {project.sections.map((section) => (
-                <div
-                  key={section.id}
-                  className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black/65 shadow-sm"
-                >
-                  <span className="text-xl font-semibold text-black">
-                    {getRoomIcon(section.title)}
-                  </span>
 
-                  <span>
-                    {section.text ? `${section.text} ${section.title}` : section.title}
-                  </span>
-                </div>
-              ))}
+              {project.sections.map(
+                (section) => (
+
+                  <div
+                    key={section.id}
+                    className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black/65 shadow-sm"
+                  >
+
+                    <div className="text-black">
+                      {getRoomIcon(
+                        section.title
+                      )}
+                    </div>
+
+                    <span>
+                      {section.text
+                        ? `${section.text} ${section.title}`
+                        : section.title}
+                    </span>
+
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
 
         <div className="grid gap-8">
+
           {project.sections.length > 0 ? (
-            project.sections.map((section) => (
-              <div key={section.id} className="rounded-2xl bg-[#e5e7eb] p-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {section.images.map((img, index) => (
-                    <img
-                      key={index}
-                      src={img}
-                      alt={`Project image ${index + 1}`}
-                      className="aspect-[16/10] w-full rounded-xl object-cover"
-                    />
-                  ))}
+            project.sections.map(
+              (section) => (
+
+                <div
+                  key={section.id}
+                  className="rounded-2xl bg-[#e5e7eb] p-5"
+                >
+
+                  <div className="grid gap-4 md:grid-cols-2">
+
+                    {section.images.map(
+                      (img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          alt={`Project image ${index + 1}`}
+                          className="aspect-[16/10] w-full rounded-xl object-cover"
+                        />
+                      )
+                    )}
+
+                  </div>
+
                 </div>
-              </div>
-            ))
+              )
+            )
           ) : (
             <div className="rounded-2xl bg-[#e5e7eb] p-6 text-sm text-black/55 shadow-sm">
               No images added yet.
             </div>
           )}
+
         </div>
       </div>
     </main>
