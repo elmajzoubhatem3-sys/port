@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [roomText, setRoomText] = useState("");
   const [roomImages, setRoomImages] = useState<File[]>([]);
   const [savingRoom, setSavingRoom] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<number | null>(null);
 
   useEffect(() => {
     const adminStatus = localStorage.getItem("vertex-admin") === "true";
@@ -101,18 +102,31 @@ export default function AdminPage() {
     localStorage.removeItem("vertex-admin");
   };
 
-  const handleAddRoom = async (e: FormEvent<HTMLFormElement>) => {
+  const resetRoomForm = () => {
+    setSelectedProjectId("");
+    setRoomTitle("");
+    setRoomText("");
+    setRoomImages([]);
+    setEditingRoomId(null);
+  };
+
+  const handleSaveRoom = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!selectedProjectId || roomImages.length === 0) {
-      alert("Choose project and add at least one image.");
+    if (!selectedProjectId || !roomTitle.trim()) {
+      alert("Choose project and add room type.");
+      return;
+    }
+
+    if (editingRoomId === null && roomImages.length === 0) {
+      alert("Add at least one image.");
       return;
     }
 
     try {
       setSavingRoom(true);
 
-      const uploadedImages: string[] = [];
+      let uploadedImages: string[] = [];
 
       for (const file of roomImages) {
         const fileExt = file.name.split(".").pop() || "jpg";
@@ -130,26 +144,57 @@ export default function AdminPage() {
         uploadedImages.push(data.publicUrl);
       }
 
-      const { error } = await supabase.from("project_sections").insert({
-        project_id: Number(selectedProjectId),
-        title: roomTitle.trim() || "Room",
-        text: roomText.trim() || null,
-        image_url: JSON.stringify(uploadedImages),
-      });
+      if (editingRoomId !== null) {
+        const currentSection = sections.find((section) => section.id === editingRoomId);
+        const oldImages = parseImages(currentSection?.image_url);
 
-      if (error) throw error;
+        if (uploadedImages.length === 0) {
+          uploadedImages = oldImages;
+        }
 
-      setRoomTitle("");
-      setRoomText("");
-      setRoomImages([]);
+        const { error } = await supabase
+          .from("project_sections")
+          .update({
+            project_id: Number(selectedProjectId),
+            title: roomTitle.trim(),
+            text: roomText.trim() || null,
+            image_url: JSON.stringify(uploadedImages),
+          })
+          .eq("id", editingRoomId);
 
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("project_sections").insert({
+          project_id: Number(selectedProjectId),
+          title: roomTitle.trim(),
+          text: roomText.trim() || null,
+          image_url: JSON.stringify(uploadedImages),
+        });
+
+        if (error) throw error;
+      }
+
+      resetRoomForm();
       await loadAdminData();
     } catch (error) {
       console.error(error);
-      alert("Could not add room.");
+      alert("Could not save room.");
     } finally {
       setSavingRoom(false);
     }
+  };
+
+  const handleEditRoom = (section: ProjectSection) => {
+    setEditingRoomId(section.id);
+    setSelectedProjectId(String(section.project_id));
+    setRoomTitle(section.title);
+    setRoomText(section.text || "");
+    setRoomImages([]);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handleDeleteRoom = async (id: number) => {
@@ -227,10 +272,12 @@ export default function AdminPage() {
                 <p className="text-sm uppercase tracking-[0.3em] text-black/45">
                   Rooms
                 </p>
-                <h2 className="mt-2 text-3xl font-semibold">Add Rooms To Project</h2>
+                <h2 className="mt-2 text-3xl font-semibold">
+                  {editingRoomId !== null ? "Edit Room" : "Add Rooms To Project"}
+                </h2>
               </div>
 
-              <form onSubmit={handleAddRoom} className="grid gap-4 md:grid-cols-2">
+              <form onSubmit={handleSaveRoom} className="grid gap-4 md:grid-cols-2">
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
@@ -271,10 +318,24 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={savingRoom}
-                  className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 md:col-span-2"
+                  className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 >
-                  {savingRoom ? "Adding Room..." : "Add Room"}
+                  {savingRoom
+                    ? "Saving..."
+                    : editingRoomId !== null
+                    ? "Save Room Changes"
+                    : "Add Room"}
                 </button>
+
+                {editingRoomId !== null && (
+                  <button
+                    type="button"
+                    onClick={resetRoomForm}
+                    className="rounded-2xl border border-black/10 px-6 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
               </form>
             </section>
 
@@ -288,21 +349,33 @@ export default function AdminPage() {
                     <div className="mb-4 flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm text-black/45">Project</p>
+
                         <h3 className="text-xl font-semibold">
                           {project?.name || `Project #${section.project_id}`}
                         </h3>
+
                         <p className="mt-1 text-sm text-black/50">
                           {section.text ? `${section.text} ${section.title}` : section.title}
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRoom(section.id)}
-                        className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-semibold text-white"
-                      >
-                        Delete Room
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditRoom(section)}
+                          className="rounded-2xl bg-black px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRoom(section.id)}
+                          className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-4">
