@@ -256,7 +256,7 @@ export default function AdminPage() {
                   type="text"
                   value={roomTitle}
                   onChange={(e) => setRoomTitle(e.target.value)}
-                  placeholder="Room name internal only"
+                  placeholder="Room type e.g. Bedroom, Bathroom, Kitchen"
                   className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
                 />
 
@@ -264,7 +264,7 @@ export default function AdminPage() {
                   type="text"
                   value={roomText}
                   onChange={(e) => setRoomText(e.target.value)}
-                  placeholder="Room description internal only"
+                  placeholder="Number e.g. 3"
                   className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
                 />
 
@@ -284,16 +284,16 @@ export default function AdminPage() {
                 const images = parseImages(section.image_url);
 
                 return (
-                  <div
-                    key={section.id}
-                    className="rounded-3xl bg-white p-5 shadow-sm"
-                  >
+                  <div key={section.id} className="rounded-3xl bg-white p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm text-black/45">Project</p>
                         <h3 className="text-xl font-semibold">
                           {project?.name || `Project #${section.project_id}`}
                         </h3>
+                        <p className="mt-1 text-sm text-black/50">
+                          {section.text ? `${section.text} ${section.title}` : section.title}
+                        </p>
                       </div>
 
                       <button

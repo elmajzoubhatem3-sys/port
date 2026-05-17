@@ -57,12 +57,14 @@ export default function ProjectDetailsPage() {
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
 
-    if (lower.includes("bath") || lower.includes("حمام")) return "🛁";
-    if (lower.includes("bed") || lower.includes("غرفة") || lower.includes("room")) return "🛏️";
-    if (lower.includes("kitchen") || lower.includes("مطبخ")) return "🍽️";
-    if (lower.includes("living") || lower.includes("salon") || lower.includes("صالون")) return "🛋️";
+    if (lower.includes("bath") || lower.includes("حمام")) return "⌒";
+    if (lower.includes("bed") || lower.includes("غرفة") || lower.includes("room")) return "▱";
+    if (lower.includes("kitchen") || lower.includes("مطبخ")) return "▤";
+    if (lower.includes("living") || lower.includes("salon") || lower.includes("صالون")) return "▭";
+    if (lower.includes("pool")) return "○";
+    if (lower.includes("garage")) return "▰";
 
-    return "▣";
+    return "□";
   };
 
   const fetchProject = async () => {
@@ -150,31 +152,28 @@ export default function ProjectDetailsPage() {
         </Link>
 
         <div className="mb-10 rounded-[2rem] bg-[#f3f4f6] p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-semibold">{project.name}</h1>
+          <h1 className="text-3xl font-semibold md:text-4xl">{project.name}</h1>
 
-              {project.description && (
-                <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
-                  {project.description}
-                </p>
-              )}
-            </div>
-
-            <p className="shrink-0 text-2xl font-semibold">
-              {project.newPrice || project.oldPrice}
+          {project.description && (
+            <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
+              {project.description}
             </p>
-          </div>
+          )}
 
           {project.sections.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-3">
               {project.sections.map((section) => (
                 <div
                   key={section.id}
-                  className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black/60 shadow-sm"
+                  className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black/65 shadow-sm"
                 >
-                  <span>{getRoomIcon(section.title)}</span>
-                  <span>{section.title}</span>
+                  <span className="text-xl font-semibold text-black">
+                    {getRoomIcon(section.title)}
+                  </span>
+
+                  <span>
+                    {section.text ? `${section.text} ${section.title}` : section.title}
+                  </span>
                 </div>
               ))}
             </div>
