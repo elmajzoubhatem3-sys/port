@@ -29,6 +29,7 @@ type ProjectItem = {
 
 export default function ProjectDetailsPage() {
   const params = useParams();
+
   const projectId = Array.isArray(params.id)
     ? params.id[0]
     : params.id;
@@ -66,60 +67,23 @@ export default function ProjectDetailsPage() {
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
 
-    if (lower.includes("bath")) {
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M4 13h16M6 13V8a2 2 0 114 0v5"
-          />
-        </svg>
-      );
-    }
-
     if (lower.includes("bed")) {
       return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 10h18v7H3z"
-          />
-        </svg>
+        <img
+          src="/icons/bedroom.png"
+          alt="Bedroom"
+          className="h-5 w-5 object-contain"
+        />
       );
     }
 
     if (lower.includes("kitchen")) {
       return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 3v18M18 3v18M6 12h12"
-          />
-        </svg>
+        <img
+          src="/icons/kitchen.png"
+          alt="Kitchen"
+          className="h-5 w-5 object-contain"
+        />
       );
     }
 
@@ -128,41 +92,25 @@ export default function ProjectDetailsPage() {
       lower.includes("salon")
     ) {
       return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.8}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M4 12h16v6H4z"
-          />
-        </svg>
+        <img
+          src="/icons/living.png"
+          alt="Living Room"
+          className="h-5 w-5 object-contain"
+        />
       );
     }
 
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.8}
-      >
-        <rect
-          x="4"
-          y="4"
-          width="16"
-          height="16"
-          rx="2"
+    if (lower.includes("bath")) {
+      return (
+        <img
+          src="/icons/bathroom.png"
+          alt="Bathroom"
+          className="h-5 w-5 object-contain"
         />
-      </svg>
-    );
+      );
+    }
+
+    return null;
   };
 
   const fetchProject = async () => {
@@ -255,6 +203,7 @@ export default function ProjectDetailsPage() {
   if (!project) {
     return (
       <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
+
         <div className="mx-auto max-w-5xl">
 
           <p className="text-lg font-medium">
