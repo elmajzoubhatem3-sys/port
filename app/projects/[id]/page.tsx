@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type ProjectSection = {
   id: number;
   title: string;
   text: string;
-  images: string[];
+  image: string;
 };
 
 type ProjectItem = {
@@ -23,297 +17,892 @@ type ProjectItem = {
   name: string;
   oldPrice: string;
   newPrice: string;
+  badge: "NEW" | "SALE" | "";
   description: string;
   sections: ProjectSection[];
 };
 
-export default function ProjectDetailsPage() {
-  const params = useParams();
+const ADMIN_PASSWORD = "vertex123";
+const SUPABASE_URL = "https://npfakrctogfqxqxvzlsg.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_wm7My7kwosKEx-YMah5hwg_Z5UJIzAU";
+const STORAGE_BUCKET = "portfolio";
 
-  const projectId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-  const [project, setProject] =
-    useState<ProjectItem | null>(null);
+type ViewMode = "home" | "all-projects" | "project-details";
 
-  const [loading, setLoading] =
-    useState(true);
+type DbProject = {
+  id: number;
+  name: string;
+  image_url: string;
+  old_price: string;
+  new_price: string | null;
+  badge: string | null;
+  description: string | null;
+};
 
-  const parseImages = (
-    value: string | null | undefined
-  ): string[] => {
-    if (!value) return [];
+type DbSection = {
+  id: number;
+  project_id: number;
+  title: string;
+  text: string | null;
+  image_url: string;
+};
 
-    try {
-      const parsed = JSON.parse(value);
+function HeroScene() {
+  return (
+    <div className="flex h-full w-full items-center justify-center overflow-hidden">
+      <motion.img
+        src="/images/house.jpg"
+        alt="VERTEX hero"
+        className="h-full w-full object-cover"
+        initial={{ scale: 1 }}
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+}
 
-      if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (item) => typeof item === "string"
-        );
-      }
+function mapProjects(projects: DbProject[], sections: DbSection[]): ProjectItem[] {
+  return projects.map((project) => ({
+    id: project.id,
+    image: project.image_url,
+    name: project.name,
+    oldPrice: project.old_price,
+    newPrice: project.new_price ?? "",
+    badge: project.badge === "NEW" || project.badge === "SALE" ? project.badge : "",
+    description: project.description ?? "",
+    sections: sections
+      .filter((section) => section.project_id === project.id)
+      .map((section) => ({
+        id: section.id,
+        title: section.title,
+        text: section.text ?? "",
+        image: section.image_url,
+      })),
+  }));
+}
 
-      if (typeof parsed === "string") {
-        return [parsed];
-      }
+async function uploadImage(file: File, folder: string) {
+  const ext = file.name.split(".").pop() || "jpg";
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-      return [];
-    } catch {
-      return [value];
-    }
-  };
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(fileName, file, {
+    upsert: false,
+  });
 
-  const getRoomIcon = (title: string) => {
-    const lower = title.toLowerCase();
+  if (error) throw error;
 
-    if (lower.includes("bed")) {
-      return (
-        <img
-          src="/icons/bedroom.png"
-          alt="Bedroom"
-          className="h-5 w-5 object-contain"
-        />
-      );
-    }
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+  return data.publicUrl;
+}
 
-    if (lower.includes("kitchen")) {
-      return (
-        <img
-          src="/icons/kitchen.png"
-          alt="Kitchen"
-          className="h-5 w-5 object-contain"
-        />
-      );
-    }
+type ProjectsManagerProps = {
+  isAdmin: boolean;
+};
 
-    if (
-      lower.includes("living") ||
-      lower.includes("salon")
-    ) {
-      return (
-        <img
-          src="/icons/living.png"
-          alt="Living Room"
-          className="h-5 w-5 object-contain"
-        />
-      );
-    }
+function ProjectsManager({ isAdmin }: ProjectsManagerProps) {
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-    if (lower.includes("bath")) {
-      return (
-        <img
-          src="/icons/bathroom.png"
-          alt="Bathroom"
-          className="h-5 w-5 object-contain"
-        />
-      );
-    }
+  const [name, setName] = useState("");
+  const [oldPrice, setOldPrice] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [badge, setBadge] = useState<"NEW" | "SALE" | "">("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("home");
 
-    return null;
-  };
+  const [sectionTitle, setSectionTitle] = useState("");
+  const [sectionText, setSectionText] = useState("");
+  const [sectionImageFile, setSectionImageFile] = useState<File | null>(null);
 
-  const fetchProject = async () => {
-    if (!projectId) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchProjects = async () => {
     setLoading(true);
+    const [{ data: projectRows, error: projectsError }, { data: sectionRows, error: sectionsError }] = await Promise.all([
+      supabase.from("projects").select("id,name,image_url,old_price,new_price,badge,description").order("created_at", { ascending: false }),
+      supabase.from("project_sections").select("id,project_id,title,text,image_url").order("created_at", { ascending: true }),
+    ]);
 
-    const numericId = Number(projectId);
-
-    const {
-      data: projectRow,
-      error: projectError,
-    } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", numericId)
-      .single();
-
-    const {
-      data: sectionRows,
-      error: sectionsError,
-    } = await supabase
-      .from("project_sections")
-      .select("*")
-      .eq("project_id", numericId)
-      .order("created_at", {
-        ascending: true,
-      });
-
-    if (
-      projectError ||
-      sectionsError ||
-      !projectRow
-    ) {
-      console.error(
-        "projectError:",
-        projectError
-      );
-
-      console.error(
-        "sectionsError:",
-        sectionsError
-      );
-
-      setProject(null);
+    if (projectsError || sectionsError) {
+      console.error(projectsError || sectionsError);
       setLoading(false);
       return;
     }
 
-    const mappedProject: ProjectItem = {
-      id: projectRow.id,
-      image: projectRow.image_url ?? "",
-      name: projectRow.name ?? "",
-      oldPrice: projectRow.old_price ?? "",
-      newPrice: projectRow.new_price ?? "",
-      description:
-        projectRow.description ?? "",
-
-      sections: (sectionRows || []).map(
-        (section: any) => ({
-          id: section.id,
-          title: section.title ?? "",
-          text: section.text ?? "",
-          images: parseImages(
-            section.image_url
-          ),
-        })
-      ),
-    };
-
-    setProject(mappedProject);
+    setProjects(mapProjects((projectRows || []) as DbProject[], (sectionRows || []) as DbSection[]));
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchProject();
-  }, [projectId]);
+    fetchProjects();
+  }, []);
+
+  const resetForm = () => {
+    setName("");
+    setOldPrice("");
+    setNewPrice("");
+    setDescription("");
+    setImageFile(null);
+    setBadge("");
+    setEditingId(null);
+  };
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setImageFile(file);
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!name.trim() || !oldPrice.trim()) return;
+
+    try {
+      setSaving(true);
+
+      if (editingId !== null) {
+        const currentProject = projects.find((project) => project.id === editingId);
+        let imageUrl = currentProject?.image || "";
+
+        if (imageFile) {
+          imageUrl = await uploadImage(imageFile, "projects");
+        }
+
+        const { error } = await supabase
+          .from("projects")
+          .update({
+            name: name.trim(),
+            old_price: oldPrice.trim(),
+            new_price: newPrice.trim() || null,
+            description: description.trim() || null,
+            badge: badge || null,
+            image_url: imageUrl,
+          })
+          .eq("id", editingId);
+
+        if (error) throw error;
+
+        resetForm();
+        e.currentTarget.reset();
+        await fetchProjects();
+        return;
+      }
+
+      if (!imageFile) return;
+
+      const imageUrl = await uploadImage(imageFile, "projects");
+
+      const { error } = await supabase.from("projects").insert({
+        name: name.trim(),
+        old_price: oldPrice.trim(),
+        new_price: newPrice.trim() || null,
+        description: description.trim() || null,
+        badge: badge || null,
+        image_url: imageUrl,
+      });
+
+      if (error) throw error;
+
+      resetForm();
+      e.currentTarget.reset();
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong while saving the project.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+
+      if (selectedProjectId === id) {
+        setSelectedProjectId(null);
+        setViewMode("home");
+      }
+
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Could not delete this project.");
+    }
+  };
+
+  const handleEdit = (project: ProjectItem) => {
+    setEditingId(project.id);
+    setName(project.name);
+    setOldPrice(project.oldPrice);
+    setNewPrice(project.newPrice);
+    setDescription(project.description || "");
+    setBadge(project.badge || "");
+    setImageFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSectionImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setSectionImageFile(file);
+  };
+
+  const handleAddSection = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedProjectId || !sectionTitle.trim() || !sectionImageFile) return;
+
+    try {
+      setSaving(true);
+      const imageUrl = await uploadImage(sectionImageFile, "sections");
+
+      const { error } = await supabase.from("project_sections").insert({
+        project_id: selectedProjectId,
+        title: sectionTitle.trim(),
+        text: sectionText.trim() || null,
+        image_url: imageUrl,
+      });
+
+      if (error) throw error;
+
+      setSectionTitle("");
+      setSectionText("");
+      setSectionImageFile(null);
+      e.currentTarget.reset();
+      await fetchProjects();
+    } catch (error) {
+      console.error(error);
+      alert("Could not add this section.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId) || null,
+    [projects, selectedProjectId]
+  );
+
+  const selectedProjectSections = selectedProject?.sections || [];
+
+  const openProjectDetails = (projectId: number) => {
+    setSelectedProjectId(projectId);
+    setViewMode("project-details");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openAllProjects = () => {
+    setViewMode("all-projects");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const goHome = () => {
+    setViewMode("home");
+    setSelectedProjectId(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   if (loading) {
+    return <div className="mt-12 text-sm text-black/60">Loading projects...</div>;
+  }
+
+  if (viewMode === "project-details" && selectedProject) {
     return (
-      <div className="min-h-screen bg-white px-6 py-20 text-black">
-        Loading...
+      <div className="mt-12">
+        <button
+          type="button"
+          onClick={goHome}
+          className="mb-8 rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
+        >
+          Back To Projects
+        </button>
+
+        <div className="overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-sm">
+          <img
+            src={selectedProject.image}
+            alt={selectedProject.name}
+            className="h-[520px] w-full object-cover"
+          />
+          <div className="px-6 py-8 md:px-10">
+            <p className="text-sm uppercase tracking-[0.3em] text-black/45">Project</p>
+            <h3 className="mt-3 text-4xl font-semibold text-black md:text-6xl">
+              {selectedProject.name}
+            </h3>
+            {selectedProject.description && (
+              <p className="mt-5 max-w-3xl text-sm leading-8 text-black/65 md:text-base">
+                {selectedProject.description}
+              </p>
+            )}
+            <div className="mt-6 flex items-center gap-3">
+              {selectedProject.newPrice ? (
+                <>
+                  <p className="text-lg text-black/40 line-through">{selectedProject.oldPrice}</p>
+                  <p className="text-3xl font-semibold text-green-600">{selectedProject.newPrice}</p>
+                </>
+              ) : (
+                <p className="text-3xl font-semibold text-black">{selectedProject.oldPrice}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <form
+            onSubmit={handleAddSection}
+            className="mt-8 grid grid-cols-1 gap-4 rounded-3xl border border-black/10 bg-[#f7f3ee] p-5 md:grid-cols-2"
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSectionImageChange}
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm"
+            />
+            <input
+              type="text"
+              value={sectionTitle}
+              onChange={(e) => setSectionTitle(e.target.value)}
+              placeholder="Section title: Bedroom, Bathroom, Living Room..."
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+            />
+            <textarea
+              value={sectionText}
+              onChange={(e) => setSectionText(e.target.value)}
+              placeholder="Short text beside this section"
+              className="min-h-[120px] rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none md:col-span-2"
+            />
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 md:w-fit disabled:opacity-50"
+            >
+              Add Section To This Project
+            </button>
+          </form>
+        )}
+
+        <div className="mt-10 grid gap-8">
+          {selectedProjectSections.length > 0 ? (
+            selectedProjectSections.map((section) => (
+              <div
+                key={section.id}
+                className="grid gap-6 rounded-[2rem] bg-white p-5 shadow-sm md:grid-cols-2 md:items-center"
+              >
+                <img
+                  src={section.image}
+                  alt={section.title}
+                  className="h-[340px] w-full rounded-[1.5rem] object-cover"
+                />
+                <div>
+                  <p className="text-sm uppercase tracking-[0.3em] text-black/40">Section</p>
+                  <h4 className="mt-2 text-2xl font-semibold text-black">{section.title}</h4>
+                  {section.text && (
+                    <p className="mt-4 text-sm leading-7 text-black/60 md:text-base">
+                      {section.text}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-[2rem] bg-white p-6 text-sm text-black/55 shadow-sm">
+              No detailed sections added yet for this project.
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  if (!project) {
+  if (viewMode === "all-projects") {
     return (
-      <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
-
-        <div className="mx-auto max-w-5xl">
-
-          <p className="text-lg font-medium">
-            Not found
-          </p>
-
-          <Link
-            href="/"
-            className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white"
+      <div className="mt-12">
+        <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-black/45">Archive</p>
+            <h3 className="mt-2 text-3xl font-semibold text-black md:text-5xl">
+              All Projects
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={goHome}
+            className="rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
           >
-            Back Home
-          </Link>
-
+            Back To Home Projects
+          </button>
         </div>
-      </main>
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.10)]"
+            >
+              <div className="relative h-[460px] w-full overflow-hidden">
+                <img
+                  src={project.image}
+                  alt={project.name}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-black/60" />
+
+                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">Project</p>
+                  <h3 className="mt-2 text-2xl font-semibold leading-tight">{project.name}</h3>
+                  <div className="mt-3 flex items-center gap-3">
+                    {project.newPrice ? (
+                      <>
+                        <p className="text-base text-white/55 line-through">{project.oldPrice}</p>
+                        <p className="text-xl font-semibold text-white">{project.newPrice}</p>
+                      </>
+                    ) : (
+                      <p className="text-xl font-semibold text-white">{project.oldPrice}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openProjectDetails(project.id)}
+                    className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                  >
+                    Read More About This Project
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-black md:px-14">
-
-      <div className="mx-auto max-w-7xl">
-
-        <Link
-          href="/"
-          className="mb-8 inline-block rounded-2xl border border-black/10 px-5 py-3 text-sm font-semibold text-black hover:bg-black hover:text-white"
+    <div className="mt-12">
+      {isAdmin && (
+        <form
+          onSubmit={handleSubmit}
+          className="mb-10 grid grid-cols-1 gap-4 rounded-3xl border border-black/10 bg-[#f7f3ee] p-5 md:grid-cols-2"
         >
-          Back To Home
-        </Link>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm"
+          />
+          <input
+            type="text"
+            value={name || ""}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter project name"
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            type="text"
+            value={oldPrice || ""}
+            onChange={(e) => setOldPrice(e.target.value)}
+            placeholder="Enter old price"
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            type="text"
+            value={newPrice || ""}
+            onChange={(e) => setNewPrice(e.target.value)}
+            placeholder="Enter new price (optional)"
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <textarea
+            value={description || ""}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short project description"
+            className="min-h-[120px] rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none md:col-span-2"
+          />
+          <select
+            value={badge}
+            onChange={(e) => setBadge(e.target.value as "NEW" | "SALE" | "")}
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+          >
+            <option value="">No badge</option>
+            <option value="NEW">NEW</option>
+            <option value="SALE">SALE</option>
+          </select>
+          <div className="flex flex-wrap gap-3 md:col-span-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              {editingId !== null ? "Save Changes" : "Add Project"}
+            </button>
+            {editingId !== null && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-2xl border border-black/10 px-6 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
-        <div className="mb-10 rounded-[2rem] bg-[#f3f4f6] p-6 shadow-sm">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+        {projects.slice(0, 3).map((project) => (
+          <div
+            key={project.id}
+            className="group relative overflow-hidden rounded-[2rem] bg-[#dfe5f2] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
+          >
+            <div className="relative h-[520px] w-full overflow-hidden">
+              <img
+                src={project.image}
+                alt={project.name}
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              />
 
-          <h1 className="text-3xl font-semibold md:text-4xl">
-            {project.name}
-          </h1>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/15 to-black/60" />
 
-          {project.description && (
-            <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
-              {project.description}
-            </p>
-          )}
-
-          {project.sections.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-3">
-
-              {project.sections.map(
-                (section) => (
-
+              {project.badge && (
+                <div className="absolute left-5 top-5 z-10">
                   <div
-                    key={section.id}
-                    className="flex items-center gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black/70 shadow-sm"
+                    className="relative flex flex-col items-center animate-[swing_2.5s_ease-in-out_infinite]"
+                    style={{ transformOrigin: "top center" }}
                   >
- 
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f4f6]">
-                      {getRoomIcon(section.title)}
+                    <div className="h-6 w-[2px] bg-white/50"></div>
+                    <div
+                      className={`relative rounded-md px-3 py-2 text-[10px] font-semibold tracking-[0.25em] text-white shadow-md ${
+                        project.badge === "SALE" ? "bg-red-500" : "bg-black/85"
+                      }`}
+                    >
+                      {project.badge}
+                      <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"></div>
                     </div>
-
-                    <div className="flex items-center gap-1">
-
-                      {section.text && (
-                        <span className="font-semibold text-black">
-                          {section.text}
-                        </span>
-                      )}
-
-                      <span className="text-black/70">
-                        {section.title}
-                      </span>
-
-                    </div>
-
                   </div>
-
-        <div className="grid gap-8">
-
-          {project.sections.length > 0 ? (
-            project.sections.map(
-              (section) => (
-
-                <div
-                  key={section.id}
-                  className="rounded-2xl bg-[#f7f7f7] p-5"
-                >
-
-                  <div className="grid gap-4 md:grid-cols-2">
-
-                    {section.images.map(
-                      (img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`Project image ${index + 1}`}
-                          className="aspect-[16/10] w-full rounded-xl object-cover"
-                        />
-                      )
-                    )}
-
-                  </div>
-
                 </div>
-              )
-            )
-          ) : (
-            <div className="rounded-2xl bg-[#f7f7f7] p-6 text-sm text-black/55 shadow-sm">
-              No images added yet.
+              )}
+
+              <div className="absolute inset-x-0 bottom-0 z-10 p-5 text-white">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/75">
+                      Project
+                    </p>
+                    <h3 className="mt-2 text-3xl font-semibold leading-tight">
+                      {project.name}
+                    </h3>
+                  </div>
+                  <p className="pt-2 text-xs text-white/70">Rating 4.8</p>
+                </div>
+
+                <div className="mt-3 flex items-center gap-3">
+                  {project.newPrice ? (
+                    <>
+                      <p className="text-base text-white/55 line-through">{project.oldPrice}</p>
+                      <p className="text-2xl font-semibold text-white">{project.newPrice}</p>
+                    </>
+                  ) : (
+                    <p className="text-2xl font-semibold text-white">{project.oldPrice}</p>
+                  )}
+                </div>
+
+                {project.description && (
+                  <p className="mt-3 max-w-md text-sm leading-6 text-white/78">
+                    {project.description}
+                  </p>
+                )}
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
+                    <p className="text-2xl font-semibold">{project.sections.length}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">
+                      Spaces
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-white/92 px-4 py-4 text-center text-black shadow-sm backdrop-blur-md">
+                    <p className="text-2xl font-semibold">
+                      {project.newPrice ? "Offer" : "Ready"}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-black/55">
+                      Status
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => openProjectDetails(project.id)}
+                  className="mt-4 w-full rounded-[1.25rem] bg-white px-5 py-4 text-sm font-semibold text-black transition hover:opacity-90"
+                >
+                  Read More About This Project
+                </button>
+
+                {isAdmin && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(project)}
+                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(project.id)}
+                      className="rounded-2xl border border-white/25 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-10 flex justify-center">
+        <button
+          type="button"
+          onClick={openAllProjects}
+          className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          See All Projects
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function VertexPortfolioHomePage() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  useEffect(() => {
+    const adminStatus = localStorage.getItem("vertex-admin") === "true";
+    setIsAdmin(adminStatus);
+  }, []);
+
+  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAdmin(true);
+      setShowLogin(false);
+      setPassword("");
+      setLoginError("");
+      localStorage.setItem("vertex-admin", "true");
+      return;
+    }
+    setLoginError("Wrong password");
+  };
+
+  const handleLogout = () => {
+    setIsAdmin(false);
+    setShowLogin(false);
+    setPassword("");
+    setLoginError("");
+    localStorage.removeItem("vertex-admin");
+  };
+
+  return (
+    <main className="min-h-screen bg-[#0b0b0b] text-white overflow-hidden">
+      <section className="relative h-screen w-full">
+        <div className="absolute inset-0">
+          <HeroScene />
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-black/20" />
+
+        <div className="absolute right-6 top-6 z-20 md:right-10 md:top-10">
+          {!isAdmin ? (
+            <button
+              type="button"
+              onClick={() => setShowLogin((prev) => !prev)}
+              className="rounded-2xl border border-white/20 bg-black/35 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/50"
+            >
+              Admin Login
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-2xl border border-white/20 bg-black/35 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition hover:bg-black/50"
+            >
+              Logout
+            </button>
           )}
 
+          {showLogin && !isAdmin && (
+            <form
+              onSubmit={handleLogin}
+              className="mt-3 w-[280px] rounded-3xl border border-white/15 bg-black/70 p-4 backdrop-blur-xl"
+            >
+              <p className="mb-3 text-sm font-medium text-white">Enter admin password</p>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/45"
+              />
+              {loginError && <p className="mt-2 text-sm text-red-300">{loginError}</p>}
+              <button
+                type="submit"
+                className="mt-3 w-full rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+              >
+                Login
+              </button>
+            </form>
+          )}
         </div>
-      </div>
+
+        <div className="relative z-10 flex h-full items-end px-6 pb-14 md:px-14 md:pb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl"
+          >
+            <p className="mb-3 text-sm uppercase tracking-[0.35em] text-white/70">
+              VERTEX Homes Studio
+            </p>
+            <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+              Designing elevated homes with a luxury modern vision.
+            </h1>
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/80 md:text-base">
+              Architecture, interiors, and refined residential concepts crafted to feel timeless, precise, and premium.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a
+                href="#projects"
+                className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]"
+              >
+                View Projects
+              </a>
+              <a
+                href="#about"
+                className="rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/15"
+              >
+                About Us
+              </a>
+              <a
+                href="#contact"
+                className="rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/15"
+              >
+                Contact
+              </a>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="projects" className="bg-white px-6 py-20 text-black md:px-14">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-sm uppercase tracking-[0.3em] text-black/50">Selected Projects</p>
+          <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <h2 className="text-3xl font-semibold md:text-5xl">Selected Work</h2>
+            <p className="max-w-xl text-sm leading-7 text-black/55 md:text-base">
+              A curated selection of residential concepts designed with balance,
+              elegance, and a modern architectural point of view.
+            </p>
+          </div>
+
+          <ProjectsManager isAdmin={isAdmin} />
+        </div>
+      </section>
+
+      <section id="about" className="bg-[#f7f3ee] px-6 py-20 text-black md:px-14">
+        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:items-start">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-black/45">About Us</p>
+            <h2 className="mt-3 text-3xl font-semibold md:text-5xl">
+              We design homes that feel calm, refined, and timeless.
+            </h2>
+          </div>
+
+          <div className="space-y-6 text-sm leading-7 text-black/65 md:text-base">
+            <p>
+              VERTEX Homes Studio is focused on modern residential design with a
+              clean visual language, thoughtful layouts, and elevated details.
+            </p>
+            <p>
+              Our work blends architecture, interior direction, and premium
+              presentation to create homes that look strong, elegant, and highly livable.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="bg-white px-6 py-20 text-black md:px-14">
+        <div className="mx-auto max-w-7xl rounded-[2rem] border border-black/10 bg-[#faf8f4] p-8 md:p-12">
+          <p className="text-sm uppercase tracking-[0.3em] text-black/45">Contact</p>
+          <h2 className="mt-3 text-3xl font-semibold md:text-5xl">
+            Let’s build your next project.
+          </h2>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-black/45">Phone</p>
+              <p className="mt-2 text-lg font-semibold">+961 00 000 000</p>
+            </div>
+
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-black/45">Email</p>
+              <p className="mt-2 text-lg font-semibold">hello@vertexhomes.com</p>
+            </div>
+
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <p className="text-sm text-black/45">Instagram</p>
+              <p className="mt-2 text-lg font-semibold">@vertexhomesstudio</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
+```bash bun install @supabase/supabase-js
+```
+
+وبـ Supabase لازم تعمل شيئين قبل التشغيل:
+
+1. **SQL Editor** وحط هيدا:
+
+```sql
+create table if not exists projects (
+  id bigint generated always as identity primary key,
+  name text not null,
+  image_url text not null,
+  old_price text not null,
+  new_price text,
+  badge text,
+  description text,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists project_sections (
+  id bigint generated always as identity primary key,
+  project_id bigint references projects(id) on delete cascade,
+  title text not null,
+  text text,
+  image_url text not null,
+  created_at timestamp with time zone default now()
+);
+```
+
+2. **Storage** → اعمل bucket جديد وسمّيه:
+
+```text
+portfolio
+```
+
+وخليه **Public**.
+
+إذا بدك، الخطوة الجاية بعملك نسخة أنضف كمان فيها:
+- status حقيقي بدل Ready/Offer
+- حذف section
+- تعديل section
+- route منفصل لكل مشروع.
