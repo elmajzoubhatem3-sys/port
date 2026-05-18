@@ -254,27 +254,28 @@ export default function ProjectDetailsPage() {
 
                   <div
                     key={section.id}
-                    className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black/65 shadow-sm"
+                    className="flex items-center gap-3 rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black/70 shadow-sm"
                   >
-
-                    <div className="text-black">
-                      {getRoomIcon(
-                        section.title
-                      )}
+ 
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f4f6]">
+                      {getRoomIcon(section.title)}
                     </div>
 
-                    <span>
-                      {section.text
-                        ? `${section.text} ${section.title}`
-                        : section.title}
-                    </span>
+                    <div className="flex items-center gap-1">
+
+                      {section.text && (
+                        <span className="font-semibold text-black">
+                          {section.text}
+                        </span>
+                      )}
+
+                      <span className="text-black/70">
+                        {section.title}
+                      </span>
+
+                    </div>
 
                   </div>
-                )
-              )}
-            </div>
-          )}
-        </div>
 
         <div className="grid gap-8">
 
@@ -284,7 +285,7 @@ export default function ProjectDetailsPage() {
 
                 <div
                   key={section.id}
-                  className="rounded-2xl bg-[#e5e7eb] p-5"
+                  className="rounded-2xl bg-[#f7f7f7] p-5"
                 >
 
                   <div className="grid gap-4 md:grid-cols-2">
@@ -306,7 +307,7 @@ export default function ProjectDetailsPage() {
               )
             )
           ) : (
-            <div className="rounded-2xl bg-[#e5e7eb] p-6 text-sm text-black/55 shadow-sm">
+            <div className="rounded-2xl bg-[#f7f7f7] p-6 text-sm text-black/55 shadow-sm">
               No images added yet.
             </div>
           )}
