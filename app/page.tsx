@@ -160,6 +160,57 @@ export default function VertexPortfolioHomePage() {
         </div>
       </section>
 
+      {/* NEW 4 FRAMES SECTION */}
+
+      <section className="bg-[#f7f7f7] px-6 pb-20 text-black md:px-14">
+
+        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2">
+
+          {[
+            {
+              icon: "⌖",
+              title: "Top Locations",
+              text: "Properties in prime areas with key amenities.",
+            },
+            {
+              icon: "▥",
+              title: "Elite Estates",
+              text: "Upscale properties with luxury designs.",
+            },
+            {
+              icon: "⌂",
+              title: "Budget Homes",
+              text: "Affordable options for families and individuals.",
+            },
+            {
+              icon: "◇",
+              title: "Business Properties",
+              text: "Commercial spaces for offices and retail.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-[2rem] bg-white p-7 shadow-sm"
+            >
+
+              <div className="mb-10 text-3xl text-black">
+                {item.icon}
+              </div>
+
+              <h3 className="text-2xl font-medium">
+                {item.title}
+              </h3>
+
+              <p className="mt-4 text-base leading-7 text-black/45">
+                {item.text}
+              </p>
+
+            </div>
+          ))}
+
+        </div>
+      </section>
+
       <section
         id="contact"
         className="bg-white px-6 py-20 text-black md:px-14"
