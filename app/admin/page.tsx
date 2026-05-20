@@ -33,12 +33,15 @@ export default function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [sections, setSections] = useState<ProjectSection[]>([]);
 
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [infoProjectId, setInfoProjectId] = useState("");
   const [roomTitle, setRoomTitle] = useState("");
   const [roomText, setRoomText] = useState("");
-  const [roomImages, setRoomImages] = useState<File[]>([]);
-  const [savingRoom, setSavingRoom] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<number | null>(null);
+  const [savingRoomInfo, setSavingRoomInfo] = useState(false);
+
+  const [imageProjectId, setImageProjectId] = useState("");
+  const [roomImages, setRoomImages] = useState<File[]>([]);
+  const [savingImages, setSavingImages] = useState(false);
 
   useEffect(() => {
     const adminStatus = localStorage.getItem("vertex-admin") === "true";
@@ -47,18 +50,10 @@ export default function AdminPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
-
     try {
       const parsed = JSON.parse(value);
-
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item) => typeof item === "string");
-      }
-
-      if (typeof parsed === "string") {
-        return [parsed];
-      }
-
+      if (Array.isArray(parsed)) return parsed.filter((item) => typeof item === "string");
+      if (typeof parsed === "string") return [parsed];
       return [];
     } catch {
       return [value];
@@ -76,9 +71,7 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) {
-      loadAdminData();
-    }
+    if (isAdmin) loadAdminData();
   }, [isAdmin]);
 
   const handleLogin = (e: FormEvent<HTMLFormElement>) => {
@@ -102,31 +95,69 @@ export default function AdminPage() {
     localStorage.removeItem("vertex-admin");
   };
 
-  const resetRoomForm = () => {
-    setSelectedProjectId("");
+  const resetRoomInfoForm = () => {
+    setInfoProjectId("");
     setRoomTitle("");
     setRoomText("");
-    setRoomImages([]);
     setEditingRoomId(null);
   };
 
-  const handleSaveRoom = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSaveRoomInfo = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!selectedProjectId || !roomTitle.trim()) {
+    if (!infoProjectId || !roomTitle.trim()) {
       alert("Choose project and add room type.");
       return;
     }
 
-    if (editingRoomId === null && roomImages.length === 0) {
-      alert("Add at least one image.");
+    try {
+      setSavingRoomInfo(true);
+
+      if (editingRoomId !== null) {
+        const { error } = await supabase
+          .from("project_sections")
+          .update({
+            project_id: Number(infoProjectId),
+            title: roomTitle.trim(),
+            text: roomText.trim() || null,
+            image_url: "[]",
+          })
+          .eq("id", editingRoomId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("project_sections").insert({
+          project_id: Number(infoProjectId),
+          title: roomTitle.trim(),
+          text: roomText.trim() || null,
+          image_url: "[]",
+        });
+
+        if (error) throw error;
+      }
+
+      resetRoomInfoForm();
+      await loadAdminData();
+    } catch (error) {
+      console.error(error);
+      alert("Could not save room info.");
+    } finally {
+      setSavingRoomInfo(false);
+    }
+  };
+
+  const handleSaveRoomImages = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!imageProjectId || roomImages.length === 0) {
+      alert("Choose project and add at least one image.");
       return;
     }
 
     try {
-      setSavingRoom(true);
+      setSavingImages(true);
 
-      let uploadedImages: string[] = [];
+      const uploadedImages: string[] = [];
 
       for (const file of roomImages) {
         const fileExt = file.name.split(".").pop() || "jpg";
@@ -144,52 +175,31 @@ export default function AdminPage() {
         uploadedImages.push(data.publicUrl);
       }
 
-      if (editingRoomId !== null) {
-        const currentSection = sections.find((section) => section.id === editingRoomId);
-        const oldImages = parseImages(currentSection?.image_url);
+      const { error } = await supabase.from("project_sections").insert({
+        project_id: Number(imageProjectId),
+        title: "__images__",
+        text: null,
+        image_url: JSON.stringify(uploadedImages),
+      });
 
-        if (uploadedImages.length === 0) {
-          uploadedImages = oldImages;
-        }
+      if (error) throw error;
 
-        const { error } = await supabase
-          .from("project_sections")
-          .update({
-            project_id: Number(selectedProjectId),
-            title: roomTitle.trim(),
-            text: roomText.trim() || null,
-            image_url: JSON.stringify(uploadedImages),
-          })
-          .eq("id", editingRoomId);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("project_sections").insert({
-          project_id: Number(selectedProjectId),
-          title: roomTitle.trim(),
-          text: roomText.trim() || null,
-          image_url: JSON.stringify(uploadedImages),
-        });
-
-        if (error) throw error;
-      }
-
-      resetRoomForm();
+      setImageProjectId("");
+      setRoomImages([]);
       await loadAdminData();
     } catch (error) {
       console.error(error);
-      alert("Could not save room.");
+      alert("Could not add room images.");
     } finally {
-      setSavingRoom(false);
+      setSavingImages(false);
     }
   };
 
   const handleEditRoom = (section: ProjectSection) => {
     setEditingRoomId(section.id);
-    setSelectedProjectId(String(section.project_id));
+    setInfoProjectId(String(section.project_id));
     setRoomTitle(section.title);
     setRoomText(section.text || "");
-    setRoomImages([]);
 
     window.scrollTo({
       top: 0,
@@ -205,19 +215,21 @@ export default function AdminPage() {
       await loadAdminData();
     } catch (error) {
       console.error(error);
-      alert("Could not delete room.");
+      alert("Could not delete.");
     }
   };
 
+  const roomInfoSections = sections.filter((section) => section.title !== "__images__");
+  const imageSections = sections.filter((section) => section.title === "__images__");
+
   return (
-    <main className="min-h-screen bg-[#f7f3ee] px-6 py-10 text-black md:px-14">
+    <main className="min-h-screen bg-[#f7f7f7] px-6 py-10 text-black md:px-14">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex items-center justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-black/45">
               Vertex Admin
             </p>
-
             <h1 className="mt-2 text-4xl font-semibold">Manage Projects</h1>
           </div>
 
@@ -270,17 +282,81 @@ export default function AdminPage() {
             <section className="mt-12 rounded-3xl bg-white p-6 shadow-sm">
               <div className="mb-6">
                 <p className="text-sm uppercase tracking-[0.3em] text-black/45">
-                  Rooms
+                  Room Info
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold">
-                  {editingRoomId !== null ? "Edit Room" : "Add Rooms To Project"}
+                  {editingRoomId !== null ? "Edit Room Info" : "Add Room Info"}
                 </h2>
               </div>
 
-              <form onSubmit={handleSaveRoom} className="grid gap-4 md:grid-cols-2">
+              <form onSubmit={handleSaveRoomInfo} className="grid gap-4 md:grid-cols-2">
                 <select
-                  value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  value={infoProjectId}
+                  onChange={(e) => setInfoProjectId(e.target.value)}
+                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="">Choose project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  value={roomTitle}
+                  onChange={(e) => setRoomTitle(e.target.value)}
+                  placeholder="Room type e.g. Bedroom, Bathroom, Kitchen"
+                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+                />
+
+                <input
+                  type="text"
+                  value={roomText}
+                  onChange={(e) => setRoomText(e.target.value)}
+                  placeholder="Number e.g. 3"
+                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={savingRoomInfo}
+                    className="flex-1 rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {savingRoomInfo
+                      ? "Saving..."
+                      : editingRoomId !== null
+                      ? "Save Room Info"
+                      : "Add Room Info"}
+                  </button>
+
+                  {editingRoomId !== null && (
+                    <button
+                      type="button"
+                      onClick={resetRoomInfoForm}
+                      className="rounded-2xl border border-black/10 px-6 py-3 text-sm font-semibold text-black"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </section>
+
+            <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm">
+              <div className="mb-6">
+                <p className="text-sm uppercase tracking-[0.3em] text-black/45">
+                  Room Images
+                </p>
+                <h2 className="mt-2 text-3xl font-semibold">Add Room Images</h2>
+              </div>
+
+              <form onSubmit={handleSaveRoomImages} className="grid gap-4 md:grid-cols-2">
+                <select
+                  value={imageProjectId}
+                  onChange={(e) => setImageProjectId(e.target.value)}
                   className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
                 >
                   <option value="">Choose project</option>
@@ -299,61 +375,28 @@ export default function AdminPage() {
                   className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm"
                 />
 
-                <input
-                  type="text"
-                  value={roomTitle}
-                  onChange={(e) => setRoomTitle(e.target.value)}
-                  placeholder="Room type e.g. Bedroom, Bathroom, Kitchen"
-                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                />
-
-                <input
-                  type="text"
-                  value={roomText}
-                  onChange={(e) => setRoomText(e.target.value)}
-                  placeholder="Number e.g. 3"
-                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none"
-                />
-
                 <button
                   type="submit"
-                  disabled={savingRoom}
-                  className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                  disabled={savingImages}
+                  className="rounded-2xl bg-black px-6 py-3 text-sm font-semibold text-white disabled:opacity-50 md:col-span-2"
                 >
-                  {savingRoom
-                    ? "Saving..."
-                    : editingRoomId !== null
-                    ? "Save Room Changes"
-                    : "Add Room"}
+                  {savingImages ? "Adding Images..." : "Add Room Images"}
                 </button>
-
-                {editingRoomId !== null && (
-                  <button
-                    type="button"
-                    onClick={resetRoomForm}
-                    className="rounded-2xl border border-black/10 px-6 py-3 text-sm font-semibold text-black transition hover:bg-black hover:text-white"
-                  >
-                    Cancel Edit
-                  </button>
-                )}
               </form>
             </section>
 
             <section className="mt-8 grid gap-5">
-              {sections.map((section) => {
+              {roomInfoSections.map((section) => {
                 const project = projects.find((item) => item.id === section.project_id);
-                const images = parseImages(section.image_url);
 
                 return (
                   <div key={section.id} className="rounded-3xl bg-white p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm text-black/45">Project</p>
-
+                        <p className="text-sm text-black/45">Room Info</p>
                         <h3 className="text-xl font-semibold">
                           {project?.name || `Project #${section.project_id}`}
                         </h3>
-
                         <p className="mt-1 text-sm text-black/50">
                           {section.text ? `${section.text} ${section.title}` : section.title}
                         </p>
@@ -377,6 +420,32 @@ export default function AdminPage() {
                         </button>
                       </div>
                     </div>
+                  </div>
+                );
+              })}
+
+              {imageSections.map((section) => {
+                const project = projects.find((item) => item.id === section.project_id);
+                const images = parseImages(section.image_url);
+
+                return (
+                  <div key={section.id} className="rounded-3xl bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-black/45">Room Images</p>
+                        <h3 className="text-xl font-semibold">
+                          {project?.name || `Project #${section.project_id}`}
+                        </h3>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRoom(section.id)}
+                        className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        Delete Images
+                      </button>
+                    </div>
 
                     <div className="grid gap-3 md:grid-cols-4">
                       {images.map((img, index) => (
@@ -384,7 +453,7 @@ export default function AdminPage() {
                           key={index}
                           src={img}
                           alt={`Room image ${index + 1}`}
-                          className="aspect-square w-full rounded-2xl object-cover"
+                          className="aspect-[16/10] w-full rounded-2xl object-cover"
                         />
                       ))}
                     </div>
