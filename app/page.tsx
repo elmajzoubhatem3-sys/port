@@ -190,14 +190,14 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="rounded-[2rem] bg-white p-7 shadow-sm"
+              className="rounded-[1.7rem] bg-white p-7 shadow-sm"
             >
 
               <div className="mb-10 text-3xl text-black">
                 {item.icon}
               </div>
 
-              <h3 className="text-2xl font-medium">
+              <h3 className="text-xl font-medium">
                 {item.title}
               </h3>
 
