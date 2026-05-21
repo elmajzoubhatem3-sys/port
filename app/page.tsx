@@ -160,11 +160,11 @@ export default function VertexPortfolioHomePage() {
         </div>
       </section>
 
-      {/* NEW 4 FRAMES SECTION */}
+      {/* SMALL 4 FRAMES SECTION */}
 
       <section className="bg-[#f7f7f7] px-6 pb-20 text-black md:px-14">
 
-        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-2">
+        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
 
           {[
             {
@@ -190,10 +190,10 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="rounded-[1.7rem] bg-white p-7 shadow-sm"
+              className="rounded-[1.5rem] bg-white p-5 shadow-sm"
             >
 
-              <div className="mb-10 text-3xl text-black">
+              <div className="mb-5 text-2xl text-black">
                 {item.icon}
               </div>
 
@@ -201,7 +201,7 @@ export default function VertexPortfolioHomePage() {
                 {item.title}
               </h3>
 
-              <p className="mt-4 text-base leading-7 text-black/45">
+              <p className="mt-3 text-sm leading-6 text-black/45">
                 {item.text}
               </p>
 
