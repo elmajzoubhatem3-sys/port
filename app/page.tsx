@@ -28,6 +28,8 @@ export default function VertexPortfolioHomePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#0b0b0b] text-white">
 
+      {/* HERO */}
+
       <section className="relative h-screen w-full">
 
         <div className="absolute inset-0">
@@ -84,6 +86,8 @@ export default function VertexPortfolioHomePage() {
         </div>
       </section>
 
+      {/* PROJECTS */}
+
       <section
         id="projects"
         className="bg-white px-6 py-20 text-black md:px-14"
@@ -123,6 +127,8 @@ export default function VertexPortfolioHomePage() {
         </div>
       </section>
 
+      {/* ABOUT */}
+
       <section
         id="about"
         className="bg-[#f7f7f7] px-6 py-20 text-black md:px-14"
@@ -160,11 +166,11 @@ export default function VertexPortfolioHomePage() {
         </div>
       </section>
 
-      {/* SMALL 4 FRAMES SECTION */}
+      {/* SMALL FEATURES */}
 
       <section className="bg-[#f7f7f7] px-6 pb-20 text-black md:px-14">
 
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
+        <div className="mx-auto grid max-w-4xl gap-3 md:grid-cols-2">
 
           {[
             {
@@ -190,18 +196,18 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="rounded-[1.5rem] bg-white p-5 shadow-sm"
+              className="rounded-[1.2rem] bg-white p-4 shadow-sm"
             >
 
-              <div className="mb-5 text-2xl text-black">
+              <div className="mb-4 text-xl text-black">
                 {item.icon}
               </div>
 
-              <h3 className="text-xl font-medium">
+              <h3 className="text-lg font-medium">
                 {item.title}
               </h3>
 
-              <p className="mt-3 text-sm leading-6 text-black/45">
+              <p className="mt-2 text-xs leading-5 text-black/45">
                 {item.text}
               </p>
 
@@ -210,6 +216,8 @@ export default function VertexPortfolioHomePage() {
 
         </div>
       </section>
+
+      {/* CONTACT */}
 
       <section
         id="contact"
