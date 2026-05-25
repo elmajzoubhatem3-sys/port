@@ -167,7 +167,7 @@ export default function VertexPortfolioHomePage() {
       </section>
 
       <section className="bg-[#f7f7f7] px-6 pb-24 text-black md:px-14">
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-4">
+        <div className="mx-auto grid max-w-4xl gap-3 md:grid-cols-2">
           {[
             {
               type: "location",
@@ -192,7 +192,7 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="min-h-[180px] rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm"
+              className="rounded-[1.2rem] bg-white p-4 shadow-sm"
             >
               <div className="mb-8 text-black">
                 <FeatureIcon type={item.type} />

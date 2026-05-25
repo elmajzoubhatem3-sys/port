@@ -367,7 +367,7 @@ export function ProjectsManager({
             className="group relative overflow-hidden rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           >
             <Link href={`/projects/${project.id}`}>
-              <div className="relative h-[300px] w-full overflow-hidden">
+              <div className="relative h-[220px] w-full overflow-hidden">
                 <img
                   src={project.image}
                   alt={project.name}
