@@ -194,13 +194,13 @@ export default function VertexPortfolioHomePage() {
               key={item.title}
               className="rounded-[1.2rem] bg-white p-4 shadow-sm"
             >
-              <div className="mb-8 text-black">
+              <div className="mb-5 text-black">
                 <FeatureIcon type={item.type} />
               </div>
 
-              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <h3 className="text-lg font-semibold">{item.title}</h3>
 
-              <p className="mt-3 text-sm leading-6 text-black/50">{item.text}</p>
+              <p className="mt-2 text-xs leading-5 text-black/50">{item.text}</p>
             </div>
           ))}
         </div>
