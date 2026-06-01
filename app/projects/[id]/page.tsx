@@ -184,7 +184,7 @@ export default function ProjectDetailsPage() {
             {roomImages.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {roomImages.map((img, index) => (
-                  <img
+                  <motion.img
                     key={index}
                     src={img}
                     alt={`Project image ${index + 1}`}
