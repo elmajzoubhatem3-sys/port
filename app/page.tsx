@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
 import { ProjectsManager } from "./components/ProjectsManager";
 
 function HeroScene() {
@@ -64,9 +65,49 @@ function FeatureIcon({ type }: { type: string }) {
 }
 
 export default function VertexPortfolioHomePage() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#f7f7f7] text-white">
       <section className="relative h-screen w-full">
+        <div className="absolute left-6 top-6 z-30 md:left-14">
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-full border border-white/20 bg-black/30 px-4 py-3 text-xl leading-none text-white backdrop-blur-md transition hover:bg-black/50"
+          >
+            •••
+          </button>
+
+          {menuOpen && (
+            <div className="mt-3 flex w-48 flex-col gap-2 rounded-2xl border border-white/15 bg-black/45 p-3 backdrop-blur-xl">
+              <a
+                href="#projects"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
+              >
+                View Projects
+              </a>
+
+              <a
+                href="#about"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
+              >
+                About Us
+              </a>
+
+              <a
+                href="#contact"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
+              >
+                Contact
+              </a>
+            </div>
+          )}
+        </div>
+
         <div className="absolute inset-0">
           <HeroScene />
         </div>
@@ -89,29 +130,6 @@ export default function VertexPortfolioHomePage() {
               Architecture, interiors, and refined residential concepts crafted to feel timeless,
               precise, and premium.
             </p>
-
-            <div className="mt-8 flex flex-nowrap gap-2 overflow-x-auto sm:gap-4">
-              <a
-                href="#projects"
-                className="whitespace-nowrap rounded-2xl bg-white px-4 py-3 text-xs font-semibold text-black transition hover:scale-[1.02] sm:px-6 sm:text-sm"
-              >
-                View Projects
-              </a>
-
-              <a
-                href="#about"
-                className="whitespace-nowrap rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/15 sm:px-6 sm:text-sm"
-              >
-                About Us
-              </a>
-
-              <a
-                href="#contact"
-                className="whitespace-nowrap rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/15 sm:px-6 sm:text-sm"
-              >
-                Contact
-              </a>
-            </div>
           </motion.div>
         </div>
       </section>
@@ -126,8 +144,7 @@ export default function VertexPortfolioHomePage() {
               elegance, and a modern architectural point of view.
             </p>
           </div>
-
-          <ProjectsManager isAdmin={false} mode="featured" />
+                   <ProjectsManager isAdmin={false} mode="featured" />
 
           <div className="mt-10 flex justify-center">
             <Link
