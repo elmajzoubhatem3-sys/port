@@ -388,7 +388,19 @@ export function ProjectsManager({
                   )}
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 z-10 bg-black/55 px-5 py-4">
+                <div
+  		  className="absolute inset-x-0 bottom-[-6px] z-10 px-5 pb-4 pt-8"
+  	          style={{
+                    WebkitMaskImage:
+                      "linear-gradient(to top, black 45%, transparent 100%)",
+                    maskImage:
+                      "linear-gradient(to top, black 45%, transparent 100%)",
+                    backdropFilter: "blur(18px)",
+                    WebkitBackdropFilter: "blur(18px)",
+                    background:
+                      "linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.02) 80%, transparent 100%)",
+                  }}
+                >
                   <div className="flex items-center justify-between gap-4 text-white">
                     <h3 className="text-2xl font-semibold leading-tight tracking-wide">
                       {project.name}
