@@ -209,15 +209,15 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="rounded-[2rem] bg-white p-8 md:p-12"
+              className="rounded-[1.2rem] bg-white p-4 shadow-sm"
             >
-              <div className="mb-12 text-black">
+              <div className="mb-5 text-black">
                 <FeatureIcon type={item.type} />
               </div>
 
-              <h3 className="text-3xl font-bold md:text-5xl">{item.title}</h3>
+              <h3 className="text-lg font-semibold">{item.title}</h3>
 
-              <p className="mt-8 text-lg leading-8 text-black/55 md:text-2xl">
+              <p className="mt-2 text-xs leading-5 text-black/50">
                 {item.text}
               </p>
             </div>
