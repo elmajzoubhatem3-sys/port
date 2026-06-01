@@ -376,7 +376,7 @@ export function ProjectsManager({
 
                 <div className="absolute left-4 right-4 top-4 z-20 flex items-start justify-between gap-2">
                   {project.location && (
-                    <div className="rounded-2xl bg-black/40 px-3 py-2 text-xs font-semibold text-white">
+                    <div className="rounded-2xl bg-black/75 px-3 py-2 text-xs font-semibold text-white">
                       📍 {project.location}
                     </div>
                   )}
