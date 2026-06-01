@@ -171,13 +171,10 @@ export default function ProjectDetailsPage() {
                     <span className="font-semibold text-black">{section.text}</span>
                   )}
                   <span className="text-black/70">{section.title}</span>
-                </div>             
-              </div>
+                </div>
+              </div> 
             )}
-
           </div>
-
-          <div className="grid gap-5 p-5 pt-0">
             {roomImages.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {roomImages.map((img, index) => (
