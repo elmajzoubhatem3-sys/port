@@ -374,23 +374,9 @@ export function ProjectsManager({
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
-                <div className="absolute inset-x-4 top-4 z-20 flex items-center justify-between">
-                  {project.location && (
-                    <div className="rounded-2xl bg-black/75 px-3 py-2 text-xs font-semibold text-white">
-                      📍 {project.location}
-                    </div>
-                  )}
-
-                  {project.area && (
-                    <div className="rounded-2xl bg-black/75 px-3 py-2 text-xs font-semibold text-white">
-                      📐 {project.area}
-                    </div>
-                  )}
-                </div>
-
                 <div
-  		  className="absolute inset-x-0 bottom-[-6px] z-10 px-5 pb-4 pt-8"
-  	          style={{
+                  className="absolute inset-x-0 bottom-[-6px] z-10 px-5 pb-4 pt-8"
+                  style={{
                     WebkitMaskImage:
                       "linear-gradient(to top, black 45%, transparent 100%)",
                     maskImage:

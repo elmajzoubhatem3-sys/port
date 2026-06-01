@@ -22,6 +22,7 @@ type ProjectItem = {
   id: number;
   image: string;
   name: string;
+  location: string;
   area: string;
   oldPrice: string;
   newPrice: string;
@@ -38,18 +39,10 @@ export default function ProjectDetailsPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
-
     try {
       const parsed = JSON.parse(value);
-
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item) => typeof item === "string");
-      }
-
-      if (typeof parsed === "string") {
-        return [parsed];
-      }
-
+      if (Array.isArray(parsed)) return parsed.filter((item) => typeof item === "string");
+      if (typeof parsed === "string") return [parsed];
       return [];
     } catch {
       return [value];
@@ -58,14 +51,12 @@ export default function ProjectDetailsPage() {
 
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
-
     if (lower.includes("bed")) return "🛏️";
     if (lower.includes("bath")) return "🛁";
     if (lower.includes("kitchen")) return "🍴";
     if (lower.includes("living") || lower.includes("salon")) return "🛋️";
     if (lower.includes("garage")) return "🚗";
     if (lower.includes("pool")) return "🏊";
-
     return "🏠";
   };
 
@@ -76,7 +67,6 @@ export default function ProjectDetailsPage() {
     }
 
     setLoading(true);
-
     const numericId = Number(projectId);
 
     const { data: projectRow, error: projectError } = await supabase
@@ -103,6 +93,7 @@ export default function ProjectDetailsPage() {
       id: projectRow.id,
       image: projectRow.image_url ?? "",
       name: projectRow.name ?? "",
+      location: projectRow.location ?? "",
       area: projectRow.area ?? "",
       oldPrice: projectRow.old_price ?? "",
       newPrice: projectRow.new_price ?? "",
@@ -135,7 +126,6 @@ export default function ProjectDetailsPage() {
       <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
         <div className="mx-auto max-w-5xl">
           <p className="text-lg font-medium">Not found</p>
-
           <Link
             href="/"
             className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white"
@@ -147,10 +137,7 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  const roomInfo = project.sections.filter(
-    (section) => section.title !== "__images__"
-  );
-
+  const roomInfo = project.sections.filter((section) => section.title !== "__images__");
   const roomImages = project.sections
     .filter((section) => section.title === "__images__")
     .flatMap((section) => section.images);
@@ -165,47 +152,78 @@ export default function ProjectDetailsPage() {
           Back To Home
         </Link>
 
-        <div className="overflow-hidden rounded-[2rem] bg-[#f7f7f7] shadow-sm">
+        <motion.div
+          initial={{ opacity: 0, y: 70 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="overflow-hidden rounded-[2rem] bg-[#f7f7f7] shadow-sm"
+        >
           <div className="p-6">
-            <h1 className="text-3xl font-semibold md:text-4xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: "easeOut" }}
+              className="text-3xl font-semibold md:text-4xl"
+            >
               {project.name}
-            </h1>
+            </motion.h1>
 
-            {project.area && (
-              <div className="mt-3 inline-flex items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm">
-                📐 {project.area}
-              </div>
+            {(project.location || project.area) && (
+              <motion.div
+                initial={{ opacity: 0, y: 35 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, delay: 0.08, ease: "easeOut" }}
+                className="mt-4 flex flex-wrap gap-2"
+              >
+                {project.location && (
+                  <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
+                    📍 {project.location}
+                  </div>
+                )}
+
+                {project.area && (
+                  <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
+                    📐 {project.area}
+                  </div>
+                )}
+              </motion.div>
             )}
 
             {project.description && (
-              <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
+              <motion.p
+                initial={{ opacity: 0, y: 35 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, delay: 0.15, ease: "easeOut" }}
+                className="mt-4 max-w-2xl text-base leading-7 text-black/55"
+              >
                 {project.description}
-              </p>
+              </motion.p>
             )}
 
             {roomInfo.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
+              <motion.div
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="mt-5 flex flex-wrap gap-2"
+              >
                 {roomInfo.map((section) => (
                   <div
                     key={section.id}
                     className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
                   >
-                    <span className="text-base">
-                      {getRoomIcon(section.title)}
-                    </span>
+                    <span className="text-base">{getRoomIcon(section.title)}</span>
 
                     <div className="flex items-center gap-1">
                       {section.text && (
-                        <span className="font-semibold text-black">
-                          {section.text}
-                        </span>
+                        <span className="font-semibold text-black">{section.text}</span>
                       )}
-
                       <span className="text-black/70">{section.title}</span>
                     </div>
                   </div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
 
@@ -218,25 +236,22 @@ export default function ProjectDetailsPage() {
                     src={img}
                     alt={`Project image ${index + 1}`}
                     className="aspect-[16/10] w-full rounded-xl object-cover"
-                    initial={{ scale: 1 }}
-                    animate={{
-                      scale: [1, 1.03, 1],
-                    }}
+                    initial={{ opacity: 0, y: 80, scale: 0.96 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, amount: 0.25 }}
                     transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
+                      duration: 0.7,
+                      delay: index * 0.12,
+                      ease: "easeOut",
                     }}
                   />
                 ))}
               </div>
             ) : (
-              <div className="p-6 text-sm text-black/55">
-                No images added yet.
-              </div>
+              <div className="p-6 text-sm text-black/55">No images added yet.</div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </main>
   );
