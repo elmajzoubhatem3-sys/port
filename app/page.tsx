@@ -209,7 +209,7 @@ export default function VertexPortfolioHomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="rounded-[1.2rem] bg-white p-4 shadow-sm"
+              className="rounded-[1.2rem] bg-white p-4"
             >
               <div className="mb-5 text-black">
                 <FeatureIcon type={item.type} />
@@ -234,17 +234,17 @@ export default function VertexPortfolioHomePage() {
           </h2>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <div className="rounded-3xl bg-[#f7f7f7] p-6 shadow-sm">
+            <div className="rounded-3xl bg-[#f7f7f7] p-6">
               <p className="text-sm text-black/45">Phone</p>
               <p className="mt-2 text-lg font-semibold">+961 00 000 000</p>
             </div>
 
-            <div className="rounded-3xl bg-[#f7f7f7] p-6 shadow-sm">
+            <div className="rounded-3xl bg-[#f7f7f7] p-6">
               <p className="text-sm text-black/45">Email</p>
               <p className="mt-2 text-lg font-semibold">hello@vertexhomes.com</p>
             </div>
 
-            <div className="rounded-3xl bg-[#f7f7f7] p-6 shadow-sm">
+            <div className="rounded-3xl bg-[#f7f7f7] p-6">
               <p className="text-sm text-black/45">Instagram</p>
               <p className="mt-2 text-lg font-semibold">@vertexhomesstudio</p>
             </div>
