@@ -38,10 +38,18 @@ export default function ProjectDetailsPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
+
     try {
       const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) return parsed.filter((item) => typeof item === "string");
-      if (typeof parsed === "string") return [parsed];
+
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item) => typeof item === "string");
+      }
+
+      if (typeof parsed === "string") {
+        return [parsed];
+      }
+
       return [];
     } catch {
       return [value];
@@ -50,12 +58,14 @@ export default function ProjectDetailsPage() {
 
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
+
     if (lower.includes("bed")) return "🛏️";
     if (lower.includes("bath")) return "🛁";
     if (lower.includes("kitchen")) return "🍴";
     if (lower.includes("living") || lower.includes("salon")) return "🛋️";
     if (lower.includes("garage")) return "🚗";
     if (lower.includes("pool")) return "🏊";
+
     return "🏠";
   };
 
@@ -66,6 +76,7 @@ export default function ProjectDetailsPage() {
     }
 
     setLoading(true);
+
     const numericId = Number(projectId);
 
     const { data: projectRow, error: projectError } = await supabase
@@ -112,7 +123,11 @@ export default function ProjectDetailsPage() {
   }, [projectId]);
 
   if (loading) {
-    return <div className="min-h-screen bg-white px-6 py-20 text-black">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-white px-6 py-20 text-black">
+        Loading...
+      </div>
+    );
   }
 
   if (!project) {
@@ -120,7 +135,11 @@ export default function ProjectDetailsPage() {
       <main className="min-h-screen bg-white px-6 py-20 text-black md:px-14">
         <div className="mx-auto max-w-5xl">
           <p className="text-lg font-medium">Not found</p>
-          <Link href="/" className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white">
+
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-2xl bg-black px-5 py-3 text-white"
+          >
             Back Home
           </Link>
         </div>
@@ -128,7 +147,10 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  const roomInfo = project.sections.filter((section) => section.title !== "__images__");
+  const roomInfo = project.sections.filter(
+    (section) => section.title !== "__images__"
+  );
+
   const roomImages = project.sections
     .filter((section) => section.title === "__images__")
     .flatMap((section) => section.images);
@@ -145,13 +167,15 @@ export default function ProjectDetailsPage() {
 
         <div className="overflow-hidden rounded-[2rem] bg-[#f7f7f7] shadow-sm">
           <div className="p-6">
-            <h1 className="text-3xl font-semibold md:text-4xl">{project.name}</h1>
-            
+            <h1 className="text-3xl font-semibold md:text-4xl">
+              {project.name}
+            </h1>
+
             {project.area && (
-  	      <div className="mt-3 inline-flex items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm">
+              <div className="mt-3 inline-flex items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm">
                 📐 {project.area}
               </div>
-            )} 
+            )}
 
             {project.description && (
               <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
@@ -160,21 +184,32 @@ export default function ProjectDetailsPage() {
             )}
 
             {roomInfo.length > 0 && (
-              <div
-                key={section.id}
-                className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
-              >
-                <span className="text-base">{getRoomIcon(section.title)}</span>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {roomInfo.map((section) => (
+                  <div
+                    key={section.id}
+                    className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
+                  >
+                    <span className="text-base">
+                      {getRoomIcon(section.title)}
+                    </span>
 
-                <div className="flex items-center gap-1">
-                  {section.text && (
-                    <span className="font-semibold text-black">{section.text}</span>
-                  )}
-                  <span className="text-black/70">{section.title}</span>
-                </div>
-              </div> 
+                    <div className="flex items-center gap-1">
+                      {section.text && (
+                        <span className="font-semibold text-black">
+                          {section.text}
+                        </span>
+                      )}
+
+                      <span className="text-black/70">{section.title}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
+
+          <div className="grid gap-5 p-5 pt-0">
             {roomImages.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {roomImages.map((img, index) => (
@@ -196,7 +231,9 @@ export default function ProjectDetailsPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-6 text-sm text-black/55">No images added yet.</div>
+              <div className="p-6 text-sm text-black/55">
+                No images added yet.
+              </div>
             )}
           </div>
         </div>
