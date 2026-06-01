@@ -374,7 +374,7 @@ export function ProjectsManager({
                   className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 />
 
-                <div className="absolute left-4 right-4 top-4 z-20 flex items-start justify-between gap-2">
+                <div className="absolute inset-x-4 top-4 z-20 flex items-center justify-between">
                   {project.location && (
                     <div className="rounded-2xl bg-black/75 px-3 py-2 text-xs font-semibold text-white">
                       📍 {project.location}
@@ -382,7 +382,7 @@ export function ProjectsManager({
                   )}
 
                   {project.area && (
-                    <div className="rounded-2xl bg-black/40 px-3 py-2 text-xs font-semibold text-white">
+                    <div className="rounded-2xl bg-black/75 px-3 py-2 text-xs font-semibold text-white">
                       📐 {project.area}
                     </div>
                   )}
