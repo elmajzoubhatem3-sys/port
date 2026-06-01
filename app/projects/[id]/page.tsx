@@ -5,6 +5,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import {
+  Bath,
+  Bed,
+  Car,
+  CookingPot,
+  Home,
+  MapPin,
+  Ruler,
+  Sofa,
+  UtensilsCrossed,
+  Waves,
+} from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,6 +51,7 @@ export default function ProjectDetailsPage() {
 
   const parseImages = (value: string | null | undefined): string[] => {
     if (!value) return [];
+
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) return parsed.filter((item) => typeof item === "string");
@@ -51,13 +64,15 @@ export default function ProjectDetailsPage() {
 
   const getRoomIcon = (title: string) => {
     const lower = title.toLowerCase();
-    if (lower.includes("bed")) return "🛏️";
-    if (lower.includes("bath")) return "🛁";
-    if (lower.includes("kitchen")) return "🍴";
-    if (lower.includes("living") || lower.includes("salon")) return "🛋️";
-    if (lower.includes("garage")) return "🚗";
-    if (lower.includes("pool")) return "🏊";
-    return "🏠";
+
+    if (lower.includes("bed")) return <Bed size={15} strokeWidth={2.2} />;
+    if (lower.includes("bath")) return <Bath size={15} strokeWidth={2.2} />;
+    if (lower.includes("kitchen")) return <UtensilsCrossed size={15} strokeWidth={2.2} />;
+    if (lower.includes("living") || lower.includes("salon")) return <Sofa size={15} strokeWidth={2.2} />;
+    if (lower.includes("garage")) return <Car size={15} strokeWidth={2.2} />;
+    if (lower.includes("pool")) return <Waves size={15} strokeWidth={2.2} />;
+
+    return <Home size={15} strokeWidth={2.2} />;
   };
 
   const fetchProject = async () => {
@@ -176,14 +191,16 @@ export default function ProjectDetailsPage() {
                 className="mt-4 flex flex-wrap gap-2"
               >
                 {project.location && (
-                  <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
-                    <span className="grayscale contrast-200 saturate-0">📍</span> {project.location}
+                  <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
+                    <MapPin size={14} strokeWidth={2.2} className="text-black" />
+                    <span>{project.location}</span>
                   </div>
                 )}
 
                 {project.area && (
-                  <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
-                    <span className="grayscale contrast-200 saturate-0">📐</span> {project.area}
+                  <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
+                    <Ruler size={14} strokeWidth={2.2} className="text-black" />
+                    <span>{project.area}</span>
                   </div>
                 )}
               </motion.div>
@@ -213,7 +230,7 @@ export default function ProjectDetailsPage() {
                     key={section.id}
                     className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
                   >
-                    <span className="text-base grayscale contrast-200 saturate-0">
+                    <span className="flex text-black">
                       {getRoomIcon(section.title)}
                     </span>
 
