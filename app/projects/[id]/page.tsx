@@ -21,6 +21,7 @@ type ProjectItem = {
   id: number;
   image: string;
   name: string;
+  area: string;
   oldPrice: string;
   newPrice: string;
   description: string;
@@ -90,6 +91,7 @@ export default function ProjectDetailsPage() {
       id: projectRow.id,
       image: projectRow.image_url ?? "",
       name: projectRow.name ?? "",
+      area: projectRow.area ?? "",
       oldPrice: projectRow.old_price ?? "",
       newPrice: projectRow.new_price ?? "",
       description: projectRow.description ?? "",
@@ -143,6 +145,12 @@ export default function ProjectDetailsPage() {
         <div className="overflow-hidden rounded-[2rem] bg-[#f7f7f7] shadow-sm">
           <div className="p-6">
             <h1 className="text-3xl font-semibold md:text-4xl">{project.name}</h1>
+            
+            {project.area && (
+  	      <div className="mt-3 inline-flex items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-black shadow-sm">
+                📐 {project.area}
+              </div>
+            )} 
 
             {project.description && (
               <p className="mt-3 max-w-2xl text-base leading-7 text-black/55">
@@ -180,6 +188,12 @@ export default function ProjectDetailsPage() {
                     src={img}
                     alt={`Project image ${index + 1}`}
                     className="aspect-[16/10] w-full rounded-xl object-cover"
+                     whileHover={{
+                       scale: 1.05,
+                     }}
+                     transition={{
+                       duration: 0.35,
+                     }}
                   />
                 ))}
               </div>
