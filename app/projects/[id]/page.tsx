@@ -177,13 +177,13 @@ export default function ProjectDetailsPage() {
               >
                 {project.location && (
                   <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
-                    📍 {project.location}
+                    <span className="grayscale contrast-200 saturate-0">📍</span> {project.location}
                   </div>
                 )}
 
                 {project.area && (
                   <div className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black/70 shadow-sm">
-                    📐 {project.area}
+                    <span className="grayscale contrast-200 saturate-0">📐</span> {project.area}
                   </div>
                 )}
               </motion.div>
@@ -213,7 +213,9 @@ export default function ProjectDetailsPage() {
                     key={section.id}
                     className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
                   >
-                    <span className="text-base">{getRoomIcon(section.title)}</span>
+                    <span className="text-base grayscale contrast-200 saturate-0">
+                      {getRoomIcon(section.title)}
+                    </span>
 
                     <div className="flex items-center gap-1">
                       {section.text && (
