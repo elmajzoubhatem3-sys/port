@@ -160,7 +160,19 @@ export default function ProjectDetailsPage() {
             )}
 
             {roomInfo.length > 0 && (
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div
+                key={section.id}
+                className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-black/70 shadow-sm"
+              >
+                <span className="text-base">{getRoomIcon(section.title)}</span>
+
+                <div className="flex items-center gap-1">
+                  {section.text && (
+                    <span className="font-semibold text-black">{section.text}</span>
+                  )}
+                  <span className="text-black/70">{section.title}</span>
+                </div>
+               </div>
                 {roomInfo.map((section) => (
                   <div
                     key={section.id}
