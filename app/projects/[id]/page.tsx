@@ -189,12 +189,15 @@ export default function ProjectDetailsPage() {
                     src={img}
                     alt={`Project image ${index + 1}`}
                     className="aspect-[16/10] w-full rounded-xl object-cover"
-                     whileHover={{
-                       scale: 1.05,
-                     }}
-                     transition={{
-                       duration: 0.35,
-                     }}
+                    initial={{ scale: 1 }}
+                    animate={{
+                      scale: [1, 1.03, 1],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   />
                 ))}
               </div>
