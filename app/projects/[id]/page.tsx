@@ -172,7 +172,7 @@ export default function ProjectDetailsPage() {
                   )}
                   <span className="text-black/70">{section.title}</span>
                 </div>
-               </div>
+              </div>
                 {roomInfo.map((section) => (
                   <div
                     key={section.id}
