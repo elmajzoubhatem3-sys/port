@@ -11,7 +11,7 @@ export default function PaymentLockScreen() {
         </h1>
 
         <p className="text-zinc-300 mb-6 leading-7">
-          This system has been temporarily suspended due to an unpaid invoice.
+          This system has been temporarily suspended.
           Please contact the software provider to restore access.
         </p>
 
@@ -25,7 +25,7 @@ export default function PaymentLockScreen() {
         </div>
 
         <a
-          href="https://wa.me/961XXXXXXXX"
+          href="https://wa.me/96171660580"
           className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 py-3 rounded-xl transition"
         >
           Contact Software Company
